@@ -3,37 +3,23 @@
 Code associated with K. D. Erickson & A. B. Smith. **Modeling the rarest of the rare : A comparison between joint species distribution models, ensembles of small models, and single-species models at extremely low sample sizes**. 
 
 
-1. Simulate Species 
+1. Simulate Species: Creates 4 species types x 6 Numbers of Presences x 30 replicates = 720 simulated species
 
-2. Run models: 
+2. Run models: Runs the models for each of the simulated species. 
+*`HMSC_Simple.R`:    
+* `HMSC_Joint_Simple.R` 
+* `ESM.R`: Runs both simple and complex ESMs in the same script                                                                          |
 
-| File              | Outputs |
-| ----------------- | ----------- |
-| `HMSC_Simple.R`   |  720: "../data/models/HMSC_Simple/SpeciesType/NumPresences/model_ReplicateNumber.RData" |    
-| `HMSC_Joint_Simple.R` |  720: "../data/models/HMSC_Joint/SpeciesType/NumPresences/model_ReplicateNumber.RData"  |
-| `ESM.R`               |  720: "../data/models/ESM_bivariate/SpeciesType/NumPresences/model_ReplicateNumber.RData" |
-|                          720: "../data/models/ESM/SpeciesType/NumPresences/model_ReplicateNumber.RData            |
-|                          'results.RData'                                                                          |
+3a. Process Models: Loops through each of the models that were run in step 2 and gathers summary statistics. 
+* `Process_Models_HMSC_Single_Simple.R`   
+* `Process_Models_HMSC_Joint_Simple.R`   
 
+ *(Note: ESM model processing takes place within the ESM script*
 
-3a. Process Models 
+3b. PC2 Calibration: Calculates PC2 calibration for each model type
+ *`PC2 Calibration.R`   
 
-| File              | Outputs |
-| ----------------- | ----------- |
-| `Process_Models_HMSC_Single_Simple.R`   | `results.RData`    |    
-| `Process_Models_HMSC_Joint_Simple.R`    | `results.RData`    |
-
- *(ESM model processing takes place within the ESM script*
-
-
-3b. PC2 Calibration
-| File              | Outputs |
-| ----------------- | ----------- |
-| `PC2 Calibration.R`   | `results2.RData`    |    
-
-
-
-4. Figures 
+4. Figures
 
 
 

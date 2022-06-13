@@ -10,23 +10,30 @@ Code associated with K. D. Erickson & A. B. Smith. **Modeling the rarest of the 
 | File              | Outputs |
 | ----------------- | ----------- |
 | `HMSC_Simple.R`   |  720: "../data/models/HMSC_Simple/SpeciesType/NumPresences/model_ReplicateNumber.RData" |    
-| HMSC Joint Simple |  720: "../data/models/HMSC_Joint/SpeciesType/NumPresences/model_ReplicateNumber.RData"  |
-| ESM               |  720: "../data/models/ESM_bivariate/SpeciesType/NumPresences/model_ReplicateNumber.RData" |
-|                   |  720: "../data/models/ESM/SpeciesType/NumPresences/model_ReplicateNumber.RData |
- * HMSC Simple: Outputs 
- * HMSC Joint Simple
- * ESM
+| `HMSC_Joint_Simple.R` |  720: "../data/models/HMSC_Joint/SpeciesType/NumPresences/model_ReplicateNumber.RData"  |
+| `ESM.R`               |  720: "../data/models/ESM_bivariate/SpeciesType/NumPresences/model_ReplicateNumber.RData" |
+|                          720: "../data/models/ESM/SpeciesType/NumPresences/model_ReplicateNumber.RData            |
+|                          'results.RData'                                                                          |
 
-3. Process Models 
-  * Process Models HMSC Single Simple
-  * Process Models HMSC Joint Simple
-  * (Process Models ESM takes place within ESM script) 
 
-Process Models HMSC Single Simple
-Process Models HMSC Joint Simple
-Achieve Convergence Single Simple
-PC2 Calibration
-Figures 
+3a. Process Models 
+
+| File              | Outputs |
+| ----------------- | ----------- |
+| `Process_Models_HMSC_Single_Simple.R`   | `results.RData`    |    
+| `Process_Models_HMSC_Joint_Simple.R`    | `results.RData`    |
+
+ *(ESM model processing takes place within the ESM script*
+
+
+3b. PC2 Calibration
+| File              | Outputs |
+| ----------------- | ----------- |
+| `PC2 Calibration.R`   | `results2.RData`    |    
+
+
+
+4. Figures 
 
 
 

@@ -17,9 +17,10 @@ Code associated with K. D. Erickson & A. B. Smith. **Modeling the rarest of the 
  *(Note: ESM model processing takes place within the ESM script*
 
 3b. PC2 Calibration: Calculates PC2 calibration for each model type
+
  *`PC2 Calibration.R`   
 
-4. Figures
+4. Figures: Creates the figures that appear in the manuscript
 
 
 

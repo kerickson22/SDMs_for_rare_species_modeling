@@ -12,7 +12,7 @@ Code associated with K. D. Erickson & A. B. Smith. **Modeling the rarest of the 
  
 * `HMSC_Simple.R`:   SSDM
 * `HMSC_Joint_Simple.R`: Joint SDM
-* `ESM.R`: Runs both simple and complex ESMs in the same script                                                                          |
+* `ESM.R`: Runs both simple and complex ESMs in the same script                                                                          
 
 3a. Process Models: Loops through each of the models that were run in step 2 and gathers summary statistics. 
 

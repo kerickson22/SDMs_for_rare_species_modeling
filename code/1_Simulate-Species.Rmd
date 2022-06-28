@@ -1,0 +1,801 @@
+---
+title: "Simulate Species and Run Models"
+author: "K. D. Erickson"
+date: "6/2/2021"
+output:
+  word_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: journal
+---
+<style type="text/css">
+
+body, td {
+   font-size: 24px;
+}
+code.r{
+  font-size: 24px;
+}
+pre {
+  font-size: 24px
+}
+</style>
+
+# 1. Download data (from Norberg et al. paper) and combine training and validation data sets into one dataset 
+
+```{r setup, echo=F, include=F}
+library(rmdformats)
+library(Hmsc)
+library(arm)
+library(corrplot)
+library(MCMCvis)
+library(MASS)
+library(viridis)
+library(RColorBrewer)
+library(ggplot2)
+library(mvtnorm)
+library(sp)
+library(rgdal)
+library(broom)
+library(dplyr)
+#library(albersusa)
+
+DD <- "../Norberg_Code/DATA"
+#Spatial information (coordinates)
+S_t <- read.csv(file.path(DD,"St_1_trees.csv"), header = F)
+S_v <- read.csv(file.path(DD, "Sv_1_trees.csv"), header = F)
+S_f <- rbind(S_t, S_v)
+names(S_f) <- c("long", "lat")
+
+#Environmental covariates (PC1, PC2 and PC3)
+X_t <- read.csv(file.path(DD,"Xt_1_trees.csv"), header = F)
+X_v <- read.csv(file.path(DD,"Xv_1_trees.csv"), header = F)
+X_f <- rbind(X_t, X_v)
+names(X_f) <- c("PC1", "PC2", "PC3")
+
+#Presence-Absence Data
+Y_t <- read.csv(file.path(DD,"Yt_1_trees.csv"), header = F)
+Y_v <- read.csv(file.path(DD,"Yv_1_trees.csv"), header = F)
+Y_f <- rbind(Y_t, Y_v)
+names(Y_f) <- paste0("sp", 1:63)
+
+dat <- data.frame(S_f, X_f, Y_f)
+cols <- viridis(3)
+
+#us <- usa_composite(proj="aeqd")
+
+
+#us_map <- fortify(us, region="name")
+
+#wgs84 <- '+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0'
+
+
+ states <- readRDS("~/Documents/GitHub/rare_species/data/GADM_3.6/gadm36_USA_1_sp.rds")
+
+SE_states <- c("Oklahoma", "Arkansas", "Tennessee", "North Carolina", "South Carolina", "Texas", "Louisiana", "Mississippi", "Alabama", "Georgia", "Florida")
+
+ SE <- states[states@data$NAME_1 %in% SE_states,]
+ 
+ temp <-dat
+ coordinates(temp) <- c(1,2)
+ proj4string(temp) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0") 
+ proj4string(SE) <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+ 
+ temp <- temp[SE,]
+ 
+ #Check that no coastlines were clipped: 
+index <- row.names(temp)
+index_full <- row.names(dat)
+not <- which(!index_full %in% index)
+temp2 <- dat[not,]
+plot(temp)
+points(temp2, col="red")
+
+south <- data.frame(temp)
+north <- data.frame(temp2)
+south <- south[,1:68]
+
+save(south, file="../data/south.RData")
+# 
+# albersCRS <- '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs'
+# 
+# 
+# 
+# id <- seq(1:15)
+# rownames(SE@data) <- id
+# id <- data.frame(id)
+# SE@data <- omnibus::insertCol(id, into=SE@data, at='HASC_1', before=F)
+# SE_df <- broom::tidy(SE, region = "id")
+# SE$id <- rownames(SE@data)
+# SE_df <- dplyr::left_join(SE_df,
+#                        SE@data,
+#                        by = "id")
+
+# ggplot() +
+#   coord_sf(crs=albersCRS) + 
+#   geom_polygon(data=SE_df, aes(x = long, y=lat, group=group)) +
+#   xlab("") + ylab("")
+
+
+```
+
+# 2. Subset sites
+
+Most people attempting to model the distribution of a rare species do not necessarily have 1200 sites worth of data. They often are focused on a smaller region. Additionally, using more than 1000 sites is not recommended for the full spatial joint HMSC model (In that case, either a GPP or NNGP are suggested as alternatives, but  they present their own unique complications as either the number of neighbors or the number of knots to use have to be chosen in some fashion). 
+
+Thus, to address both of these issues, we decided to reduce the sites to a subset of 400-600 sites (as Norberg et al. did). 
+
+Here we choose the 600 most Southern sites (or the 400). Determining whether to use 400-600 will depend on figuring out whether only 400 sites allows the choice of $\mu_{ext}$ to be far enough away from $\mu_{avg}$ while still leaving enough sites that are within 1 standard deviation of $\mu_{ext}$.
+
+
+```{r divide sites}
+
+us <- map_data('state')
+
+ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=south, aes(x=long, y=lat), colour="red") +coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -75), ylim=c(25, 40))
+
+colSums(south[,6:67])
+```
+
+## Plot PC1 by site 
+
+
+```{r}
+pdf("./Figures/For Adam/species_map.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=south, aes(x=long, y=lat, colour=PC1)) + coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -75), ylim=c(25, 40)) +
+  scale_color_continuous(type="viridis", limits=c(-9,1))
+dev.off()
+```
+## Check to see how species are split
+
+```{r split_overall}
+ cols <- brewer.pal(3, "Dark2")
+
+temp <- dat
+
+for(i in 1:1200){
+  temp$N[i] <- sum(temp[i,6:68])
+}
+
+ ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=temp, aes(x=long, y=lat, color=N, size=N),shape=19, alpha=0.8) + scale_color_viridis() +
+   scale_size(range=c(0.01,3)) +
+   coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -65), ylim=c(25, 50))
+   
+
+
+```
+
+```{r examine split, fig.show="hold", out.width="50%", warning=F, message=F}
+ 
+for (i in 1:63) {
+  temp_south <- south[, c(1:5, i + 5)]
+  temp_north <- north[, c(1:5, i + 5)]
+  names(temp_south) <- c("long", "lat", "PC1", "PC2", "PC3", "SP")
+  names(temp_north) <- c("long", "lat", "PC1", "PC2", "PC3", "SP")
+
+  p <- ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=temp_south[temp_south$SP==0,], aes(x=long, y=lat), colour=cols[1], shape=4, alpha=0.2, size=0.1) +
+    geom_point(data=temp_south[temp_south$SP==1,], aes(x=long, y=lat), colour=cols[1], shape=19, alpha=1, size=1) +
+    #North
+    geom_point(data=temp_north[temp_north$SP==0,], aes(x=long, y=lat), colour=cols[2], shape=4, alpha=0.2, size=0.1) +
+    geom_point(data=temp_north[temp_north$SP==1,], aes(x=long, y=lat), colour=cols[2], shape=19, alpha=1, size=1) +
+    ggtitle(paste0("Species: ", i)) +
+    coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -65), ylim=c(25, 50))
+  
+  plot(p)
+}
+
+```
+
+## How is niche-space split? 
+```{r niche space split}
+#PC1 x PC2
+ggplot() + 
+  geom_point(data=south, aes(x=PC1, y=PC2), color=cols[1], shape=16, size=2, alpha=0.25, show.legend=F) +
+  geom_point(data=north, aes(x=PC1, y=PC2),
+             color=cols[2], shape=16, size=2, alpha=0.25)+
+  xlab(bquote(mu[PC1])) + ylab(bquote(mu[PC2]))
+
+#PC1 x PC3
+ggplot() + 
+  geom_point(data=south, aes(x=PC1, y=PC3), color=cols[1], shape=16, size=2, alpha=0.25, show.legend=F) +
+  geom_point(data=north, aes(x=PC1, y=PC3),
+             color=cols[2], shape=16, size=2, alpha=0.25)+
+  xlab(bquote(mu[PC1])) + ylab(bquote(mu[PC3]))
+
+#PC2 x PC3
+ggplot() + 
+  geom_point(data=south, aes(x=PC2, y=PC3), color=cols[1], shape=16, size=2, alpha=0.25, show.legend=F) +
+  geom_point(data=north, aes(x=PC2, y=PC3),
+             color=cols[2], shape=16, size=2, alpha=0.25)+
+  xlab(bquote(mu[PC2])) + ylab(bquote(mu[PC3]))
+```
+
+
+# 3. Determine individual species' niche breadths as well as community weighted average of each PC. 
+```{r community weighted average of niche space}
+X_bar <- data.frame(mu_PC1 = rep(0, 64),
+                    sd_PC1 = rep(0, 64),
+                    mu_PC2 = rep(0, 64),
+                    sd_PC2 = rep(0, 64),
+                    mu_PC3 = rep(0, 64),
+                    sd_PC3 = rep(0, 64),
+                    N = rep(NA, 64))
+
+                  
+rownames(X_bar) <- c(paste0("sp", 1:63), "Mean")
+
+for (j in 1:63) {
+  temp <-subset(south, south[,j+5]==1)
+  X_bar$mu_PC1[j] <- mean(temp$PC1) #mu_PC1
+  X_bar$sd_PC1[j] <- sd(temp$PC1) #sd_PC1
+  X_bar$min_PC1[j] <- min(temp$PC1)
+  X_bar$max_PC1[j] <- max(temp$PC1)
+  
+  X_bar$mu_PC2[j] <- mean(temp$PC2) #mu_PC2
+  X_bar$sd_PC2[j] <- sd(temp$PC2) #sd_PC2
+  X_bar$min_PC2[j] <- min(temp$PC2)
+  X_bar$max_PC2[j] <- max(temp$PC2)
+  
+  X_bar$mu_PC3[j] <- mean(temp$PC3) #mu_PC3
+  X_bar$sd_PC3[j] <- sd(temp$PC3) #sd_PC3
+  X_bar$min_PC3[j] <- min(temp$PC3)
+  X_bar$max_PC3[j] <- max(temp$PC3)
+  X_bar$N[j] <- length(temp$PC1)
+  
+}
+
+X_bar$mu_PC1[64] <- mean(X_bar$mu_PC1[1:63])
+X_bar$sd_PC1[64] <-mean(X_bar$sd_PC1[1:63], na.rm=T)
+X_bar$mu_PC2[64] <- mean(X_bar$mu_PC2[1:63])
+X_bar$sd_PC2[64] <- mean(X_bar$sd_PC2[1:63], na.rm=T)
+X_bar$mu_PC3[64] <- mean(X_bar$mu_PC3[1:63])
+X_bar$sd_PC3[64] <- mean(X_bar$sd_PC3[1:63], na.rm=T)
+
+
+
+
+
+#PC1 vs PC2
+ggplot() + 
+  geom_point(data=south, aes(x=PC1, y=PC2, color=PC3), shape=16, size=2, alpha=0.25, show.legend=F) +
+  scale_color_continuous(type="viridis", limits=c(-10,3))+ 
+  geom_point(data=X_bar[1:63,], aes(x=mu_PC1, y=mu_PC2,fill=mu_PC3), shape=21, size=2) +
+  geom_point(data=X_bar[64,], aes(x=mu_PC1, y=mu_PC2, fill=mu_PC3), shape=21, size=5) + 
+  scale_fill_continuous(type="viridis", limits=c(-10,3)) +
+  xlab(bquote(mu[PC1])) + ylab(bquote(mu[PC2])) +
+  labs(fill=bquote(mu[PC3]))
+
+#PC1 vs PC3
+ggplot() +
+   geom_point(data=south, aes(x=PC1, y=PC3, color=PC2), shape=16, size=2, alpha=0.25, show.legend=F) +
+  scale_color_continuous(type="viridis", limits=c(-9,16))+
+  geom_point(data=X_bar[1:63,], aes(x=mu_PC1, y=mu_PC3,fill=mu_PC2), shape=21, size=2) +
+  geom_point(data=X_bar[64,], aes(x=mu_PC1, y=mu_PC3, fill=mu_PC2), shape=21, size=5) + 
+  scale_fill_continuous(type="viridis", limits=c(-9,16)) +
+  xlab(bquote(mu[PC1])) + ylab(bquote(mu[PC3])) +
+  labs(fill=bquote(mu[PC2]))
+  
+#PC2 vs PC3
+ggplot() + 
+  geom_point(data=south, aes(x=PC2, y=PC3, color=PC1), shape=16, size=2, alpha=0.25, show.legend=F) +
+  scale_color_continuous(type="viridis", limits=c(-9,13))+ 
+  geom_point(data=X_bar[1:63,], aes(x=mu_PC2, y=mu_PC3,fill=mu_PC1), shape=21, size=2) +
+  geom_point(data=X_bar[64,], aes(x=mu_PC2, y=mu_PC3, fill=mu_PC1), shape=21, size=5) + 
+  scale_fill_continuous(type="viridis", limits=c(-9,13)) +
+  xlab(bquote(mu[PC2])) + ylab(bquote(mu[PC3])) +
+  labs(fill=bquote(mu[PC1]))
+  
+```
+
+### How does niche breadth vary with abundance? 
+```{r niche breadth variation, warning=F, message=F}
+ggplot() + geom_point(data=X_bar[1:63,], aes(x=N, y=sd_PC1), shape=16)  + ylab(bquote(sigma[PC1])) +
+  geom_hline(yintercept=quantile(X_bar$sd_PC1, probs=0.10, na.rm=T), linetype="dashed") +
+  geom_hline(yintercept=quantile(X_bar$sd_PC1, probs=0.90, na.rm=T), linetype="dashed") +
+  geom_hline(yintercept=X_bar$sd_PC1[64], linetype="dashed", col="red") 
+
+
+ggplot() + geom_point(data=X_bar[1:63,], aes(x=N, y=sd_PC2), shape=16)  + ylab(bquote(sigma[PC2])) +
+  geom_hline(yintercept=quantile(X_bar$sd_PC2, probs=0.10, na.rm=T), linetype="dashed") +
+  geom_hline(yintercept=quantile(X_bar$sd_PC2, probs=0.9, na.rm=T), linetype="dashed") +
+    geom_hline(yintercept=X_bar$sd_PC2[64], linetype="dashed", col="red") 
+
+ggplot() + geom_point(data=X_bar[1:63,], aes(x=N, y=sd_PC3), shape=16)  + ylab(bquote(sigma[PC3])) +
+  geom_hline(yintercept=quantile(X_bar$sd_PC3, probs=0.10, na.rm=T), linetype="dashed") +
+  geom_hline(yintercept=quantile(X_bar$sd_PC3, probs=0.90, na.rm=T), linetype="dashed") +
+    geom_hline(yintercept=X_bar$sd_PC3[64], linetype="dashed", col="red") 
+```
+
+```{r new evaluation, eval=F}
+tries_PC1 <- c(seq(from=-9, to=-2.5, by=0.5), seq(from=-2, to=1, by=0.5))
+tries_PC3 <- c(seq(from=-10, to=-1, by=0.5), seq(from=1, to=3, by=0.5))
+tries_sigma_narrow_PC1 <- seq(from=0.1, to=3, by=0.1)
+tries_sigma_narrow_PC3 <- seq(from=0.1, to=3, by=0.1)
+
+tries <- expand.grid(tries_PC1, tries_PC3, tries_sigma_narrow_PC1, tries_sigma_narrow_PC3)
+names(tries) <- c(
+"mu_PC1", "mu_PC3", 
+"sd_PC1", "sd_PC3"
+)
+
+mu_avg <- c(X_bar$mu_PC1[64], X_bar$mu_PC3[64])
+Sigma_wide <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T)^2,  quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)^2))
+
+
+
+df_tries <- data.frame(
+  mu_PC1 = tries$mu_PC1, 
+  mu_PC3 = tries$mu_PC3,
+  sd_PC1 = tries$sd_PC1,
+  sd_PC3 = tries$sd_PC3,
+  p128_narrow_avg = rep(NA, length(tries$mu_PC1)),
+  p128_wide_ext = rep(NA,            length(tries$mu_PC1)),
+  p128_narrow_ext = rep(NA,
+   length(tries$mu_PC1)))
+
+
+
+
+
+for (ii in 1:length(df_tries$mu_PC1)) {
+  mu_ext <- c(df_tries$mu_PC1[ii], df_tries$mu_PC3[ii])
+  Sigma_narrow <- diag(c(df_tries$sd_PC1[ii], df_tries$sd_PC3[ii]))
+  
+  L_narrow_avg <- dmvnorm(south[,c(3,5)],
+  mean=mu_avg,
+  sigma=Sigma_narrow )
+  L_narrow_avg <- L_narrow_avg/sum(L_narrow_avg)
+  L_narrow_avg <- sort(L_narrow_avg, decreasing=T)
+  
+  L_narrow_ext <- dmvnorm(south[,c(3,5)],
+  mean=mu_ext,
+  sigma=Sigma_narrow )
+  L_narrow_ext <- L_narrow_ext/sum(L_narrow_ext)
+  L_narrow_ext <- sort(L_narrow_ext, decreasing=T)
+  
+  L_wide_ext <- dmvnorm(south[,c(3,5)],
+  mean=mu_ext,
+  sigma=Sigma_wide )
+  L_wide_ext <- L_wide_ext/sum(L_wide_ext)
+  L_wide_ext <- sort(L_wide_ext, decreasing=T)
+  
+  df_tries$p128_narrow_avg[ii] <- L_narrow_avg[128]/max(L_narrow_avg)
+  df_tries$p128_narrow_ext[ii] <- L_narrow_ext[128]/max(L_narrow_ext)
+  df_tries$p128_wide_ext[ii] <-L_wide_ext[128]/max(L_wide_ext)
+
+ if (ii %% 10000 == 0) { cat(paste0(ii, " of ", length(df_tries$mu_PC1), "\n"))
+ }
+}
+
+
+
+save(df_tries, file="../data/df_tries.RData")
+
+
+```
+
+```{r look at tries}
+
+load("../data/df_tries.RData")
+
+
+
+df_tries2 <- subset(df_tries, df_tries$p128_narrow_ext>0.5)
+df_tries3 <- subset(df_tries2, df_tries2$p128_wide_ext>0.5)
+df_tries4 <- subset(df_tries3, df_tries3$p128_narrow_avg>0.5)
+min(df_tries4$sd_PC1)
+df_tries5 <- subset(df_tries4, df_tries4$sd_PC1 <1)
+min(df_tries5$sd_PC3)
+df_tries6 <- df_tries5[df_tries5$sd_PC3<2.6,]
+df_tries7 <- subset(df_tries6, df_tries6$mu_PC1 > -4)
+
+df_tries7[order(df_tries7$p128_narrow_ext, decreasing=F),]
+
+mu_ext <- c(-3.5, 2)
+Sigma_narrow <- diag(c(0.9, 2.5))
+
+mu_avg <- c(X_bar$mu_PC1[64], X_bar$mu_PC3[64])
+Sigma_wide <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T)^2,  quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)^2))
+```
+
+
+
+
+
+File structure: 
+Model Type 
+  Species Type
+    Sample Size
+      - Each of the 30 replicates and 3 splits 
+
+# 4. Construct Suitability Surfaces 
+### First: unidimensional surfaces
+There are 4 scenarios: narrow niche (`narrow`) vs. wide niche (`wide`), and community-average (`avg`) vs extreme (`extreme`). 
+
+```{r niches, warning=F}
+
+
+
+cols <- viridis(4)
+
+#PC1
+
+ggplot(data = data.frame(x = c(-9, 13)), aes(x)) +
+   geom_histogram(data=south, aes(x=PC1, y= ..density.., fill="e"), binwidth=1, alpha=0.5) +
+  geom_histogram(data=X_bar[1:63,], aes(x=mu_PC1, y=..density.., fill="f"), binwidth=1, alpha=0.5)+
+stat_function(fun = dnorm, n = 101, args = list(mu_avg[1], sd = sqrt(Sigma_wide[1,1])), aes(color = "a")) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = mu_avg[1], sd = sqrt(Sigma_narrow[1,1])), aes(color="b")) +
+  stat_function(fun = dnorm, aes(color="c"), n = 101, args = list(mu_ext[1], sd = sqrt(Sigma_narrow[1,1]))) +
+  stat_function(fun = dnorm, aes(color="d"), n = 101, args = list(mu_ext[1], sd = sqrt(Sigma_wide[1,1]))) +
+ylab("Density") + xlab("PC1") +
+  scale_colour_manual(name = 'Case', guide='legend', 
+         values =c("a" = cols[1], "b" = cols[2], "c" = cols[3], "d"=cols[4]), labels = c('Wide - Avg','Narrow - Avg', "Narrow - Ext", "Wide - Ext")) +
+  scale_fill_manual(name = "Mean Value", guide='legend', 
+                    values=c("e"="grey", "f"="green"),
+                    labels=c("Sites", "Species"))
+  
+# #PC2
+# ggplot(data = data.frame(x = c(-9, 16)), aes(x)) +
+#    geom_histogram(data=dat, aes(x=PC2, y= ..density.., fill="e"), binwidth=1, alpha=0.5) +
+#   geom_histogram(data=X_bar[1:63,], aes(x=mu_PC2, y=..density.., fill="f"), binwidth=1, alpha=0.5)+
+# stat_function(fun = dnorm, n = 101, args = list(mu_avg[2], sd = sqrt(Sigma_wide[2,2])), aes(color = "a")) + 
+#   stat_function(fun = dnorm, n = 101, args = list(mean = mu_avg[2], sd = sqrt(Sigma_narrow[2,2])), aes(color="b")) +
+#   stat_function(fun = dnorm, aes(color="c"), n = 101, args = list(mu_ext[2], sd = sqrt(Sigma_narrow[2,2]))) +
+#   stat_function(fun = dnorm, aes(color="d"), n = 101, args = list(mu_ext[2], sd = sqrt(Sigma_wide[2,2]))) +
+# ylab("Density") + xlab("PC2") +
+#   scale_colour_manual(name = 'Case', guide='legend', 
+#          values =c("a" = cols[1], "b" = cols[2], "c" = cols[3], "d"=cols[4]), labels = c('Wide - Avg','Narrow - Avg', "Narrow - Ext", "Wide - Ext")) +
+#   scale_fill_manual(name = "Mean Value", guide='legend', 
+#                     values=c("e"="grey", "f"="green"),
+#                     labels=c("Sites", "Species"))
+  
+#PC3
+ggplot(data = data.frame(x = c(-11, 4)), aes(x)) +
+   geom_histogram(data=south, aes(x=PC3, y= ..density.., fill="e"), binwidth=1, alpha=0.5) +
+  geom_histogram(data=X_bar[1:63,], aes(x=mu_PC3, y=..density.., fill="f"), binwidth=1, alpha=0.5)+
+stat_function(fun = dnorm, n = 101, args = list(mu_avg[2], sd = sqrt(Sigma_wide[2,2])), aes(color = "a")) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = mu_avg[2], sd = sqrt(Sigma_narrow[2,2])), aes(color="b")) +
+  stat_function(fun = dnorm, aes(color="c"), n = 101, args = list(mu_ext[2], sd = sqrt(Sigma_narrow[2,2]))) +
+  stat_function(fun = dnorm, aes(color="d"), n = 101, args = list(mu_ext[2], sd = sqrt(Sigma_wide[2,2]))) +
+ylab("Density") + xlab("PC3") +
+  scale_colour_manual(name = 'Case', guide='legend', 
+         values =c("a" = cols[1], "b" = cols[2], "c" = cols[3], "d"=cols[4]), labels = c('Wide - Avg','Narrow - Avg', "Narrow - Ext", "Wide - Ext")) +
+  scale_fill_manual(name = "Mean Value", guide='legend', 
+                    values=c("e"="grey", "f"="green"),
+                    labels=c("Sites", "Species"))
+  
+ 
+  
+```
+
+### Multivariate distribution
+
+It is unlikely that species respond strongly to all three PCs. We can therefore ignore one of the PCs, for the sake of simplicity. 
+
+Here we will fix PC2 as irrelevant for determining habitat suitability for our simulated species, but we could have just as easily assumed one of the other two PCs was irrelevant. 
+
+
+
+
+
+```{r multivariate surfaces}
+
+#Case 1: Community-average, wide niche
+
+x1 <- seq(-9, 2, length.out=100)
+x3 <- seq(-10.5, 3.5, length.out=100)
+my.palette <- brewer.pal(11, "RdYlBu")
+
+df <- expand.grid(x1, x3)
+names(df) <- c("PC1", "PC3")
+
+
+df$L_wide_avg<- dmvnorm(x=df[,1:2], mean=mu_avg, sigma=Sigma_wide )
+df$L_wide_ext<- dmvnorm(x=df[,1:2], mean=mu_ext, sigma=Sigma_wide )
+
+
+df$L_narrow_avg<- dmvnorm(x=df[,1:2], mean=mu_avg, sigma=Sigma_narrow)
+df$L_narrow_ext<- dmvnorm(x=df[,1:2], mean=mu_ext, sigma=Sigma_narrow)
+
+
+#I. Wide Niche- Community Average
+ggplot() + xlim(-9, 2) + ylim(-10.5, 3.5) + 
+  geom_tile(data = df, aes(x=PC1, y = PC3, fill= L_wide_avg)) + 
+  scale_fill_gradientn(colors=my.palette) + 
+  theme(axis.text=element_text(size=15))+
+  theme(axis.title=element_text(size=15)) +
+  theme(title = element_text(size=15)) +
+  theme(plot.title=element_text(hjust=0.5)) + 
+    geom_point(data=south, aes(x=PC1, y=PC3), shape=3, alpha=0.2, size=.8)+
+  xlab("PC1") + ylab("PC3") +
+  ggtitle("I. Wide Niche - Community Average")
+
+#II. Wide Niche - Extreme Value
+ggplot() + xlim(-9, 2) + ylim(-10.5, 3.5) + 
+  geom_tile(data = df, aes(x=PC1, y = PC3, fill= L_wide_ext)) + 
+  scale_fill_gradientn(colors=my.palette) + 
+  theme(axis.text=element_text(size=15))+
+    geom_point(data=south, aes(x=PC1, y=PC3), shape=3, alpha=0.2, size=.8)+
+  theme(axis.title=element_text(size=15)) +
+  theme(title = element_text(size=15)) +
+  theme(plot.title=element_text(hjust=0.5)) + 
+  xlab("PC1") + ylab("PC3") +
+  ggtitle("II. Wide Niche - Extreme Value")
+
+#III. Narrow Niche - Community Average
+ggplot() + xlim(-9, 2) + ylim(-10.5, 3.5) + 
+  geom_tile(data = df, aes(x=PC1, y = PC3, fill= L_narrow_avg)) + 
+  scale_fill_gradientn(colors=my.palette) + 
+    geom_point(data=south, aes(x=PC1, y=PC3), shape=3, alpha=0.2, size=.8)+
+  theme(axis.text=element_text(size=15))+
+  theme(axis.title=element_text(size=15)) +
+  theme(title = element_text(size=15)) +
+  theme(plot.title=element_text(hjust=0.5)) + 
+  xlab("PC1") + ylab("PC3") +
+  ggtitle("III. Narrow Niche - Community Average")
+
+#IV. Narrow Niche - Extreme Value 
+ggplot() + xlim(-9, 2) + ylim(-10.5, 3.5) + 
+  geom_tile(data = df, aes(x=PC1, y = PC3, fill= L_narrow_ext)) + 
+  scale_fill_gradientn(colors=my.palette) +
+    geom_point(data=south, aes(x=PC1, y=PC3), shape=3, alpha=0.2, size=.8)+
+  theme(axis.text=element_text(size=15))+
+  theme(axis.title=element_text(size=15)) +
+  theme(title = element_text(size=15)) +
+  theme(plot.title=element_text(hjust=0.5)) + 
+  xlab("PC1") + ylab("PC3") +
+  ggtitle("IV. Narrow Niche - Extreme Value")
+
+```
+
+
+# 5. Generate Simulated Species 
+
+ Let $N \in \{2, 4, 8, 16, 32, 64\}$ denote the desired number of presences to be used in a training model. Steps for generating simulated species: 
+ 
+ 1. Generate $2 * N$ presences according to the habitat suitability function $L_s$. Repeat for 30 replicates
+ 
+2. For each replicate, split the data into two folds such that each fold has $N$ presences. Repeat for 3 data-splits. 
+	
+    + For N = 2, there are ${4 \choose 2} = 6$ ways of splitting the data, of which only 3 are unique: 12/34, 13/24, 14/23. 
+    
+   + Check that species are well-modeled:
+      + For each of the data splits, calculate the probability of presence by adding up $L$ for each of the sites at which the species is present. There will be 6 of these values for each of the 30 replicates for one species at each level of sample size. 
+      + For each sample-size x species category, make a histogram of the site IDs that are selected. Ideally there should be some variation here, in that each of the 30 replicates have different sites at which the species is present. 
+	
+3. Use the HMSC cross-validation function to run 2-fold cross-validation for each of the three data-splits. This will result in 3 estimates of AUC, RMSE and Tjur’s $R^2$ that are averaged over the two folds within the split. Each model will be trained on a data set that has $N$ presences, and the model will be evaluated using a heldout portion of the data that also has $N$ presences. 
+	
+4. In order to evaluate the ability of the models to recover the response curves: 
+	
+    + Run the model on folds (12), (34), (13), (24), (14), (23) to come up with 6 estimates of $\rho$ for each of the $\beta$ coefficients. Take the average. Calculate Pearson and Spearman. (Can do a logit transform to approximate normality)
+
+For each species $s$, for each sample size $n$ and for each replicate $r$: 
+
+`sims[[s]][[n]][[r]]` contains the following objects: 
+
+- `index`: stores the locations of presences. For each species x replicate x sample size combo, there should be $2*n$ presences
+- `Ysim`: Unit vector of length 600 (one for each site within the study). A site has value 1 if it is occupied and 0 otherwise. 
+- `L`: Unit vector of length 600 (one for each site within the study). The values are the habitat suitability calculated using the multivariate normal distribution for species $s$
+
+- `split1`, `split2`, `split3`: Three vectors, each of dimension 600 x1. A given split indicates which fold (1 or 2) each site is in. 
+
+```{r generate simulated species, eval=F}
+
+set.seed(12)
+NSites <- length(south$long)
+row.names(south) <- 1:NSites
+replicates <- paste0("rep", 1:30)
+NPresences <- c(64, 32, 16, 8, 4, 2)
+sizes <- paste0("size", NPresences)# Desired sample size
+species <- c("wide_avg", "wide_ext",
+             "narrow_avg", "narrow_ext")
+splits <- paste0("split", 1:3)
+
+
+sims <- vector("list", length(species))
+names(sims) <- species
+for(s in 1:length(species)){
+  sims[[s]] <- vector("list", length(NPresences))
+  names(sims[[s]]) <- sizes
+  for(n in 1:length(NPresences)) {
+    sims[[s]][[n]] <- vector("list", length(replicates))
+    names(sims[[s]][[n]]) <- replicates
+    for(r in 1:length(replicates)) {
+      sims[[s]][[n]][[r]] <- vector("list", length(splits))
+      names(sims[[s]][[n]][[r]]) <- splits
+    }
+  }}   
+    
+    
+   
+
+for (s in 1:length(species)) {
+      switch(species[s],
+          "wide_avg"={
+            sims[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean=mu_avg,
+                      sigma=Sigma_wide )
+            
+          },
+          "wide_ext" = {
+            sims[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean = mu_ext,
+                      sigma=Sigma_wide )
+          },
+            "narrow_avg" = {
+            sims[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean = mu_avg,
+                      sigma=Sigma_narrow)
+          },
+             "narrow_ext" = {
+            sims[[s]]$L <-
+             dmvnorm(south[,c(3,5)],
+                      mean = mu_ext,
+                      sigma=Sigma_narrow)
+          })#end of switch
+        
+  for(n in 1:length(sizes)) {
+   
+    for(r in 1:length(replicates)){
+        sims[[s]][[n]][[r]]$index <- matrix(ncol=(2*NPresences[n]))
+        sims[[s]][[n]][[r]]$YSim <- matrix(0, nrow=NSites, ncol=1)
+        sims[[s]][[n]][[r]]$YSim  <- data.frame(sims[[s]][[n]][[r]]$YSim )
+names(sims[[s]][[n]][[r]]$YSim ) <- "SimSp"
+        
+             sims[[s]][[n]][[r]]$index <- sample(1:NSites, 2*NPresences[n], replace=F, prob=sims[[s]]$L/sum(sims[[s]]$L))
+        
+        for(site in 1:NSites) {
+    if(site %in% sims[[s]][[n]][[r]]$index) {
+      sims[[s]][[n]][[r]]$YSim[site,] <- 1
+    }
+        }
+        
+        #Split 1 = 12/34
+        sites <- 1:NSites
+        presences1 <- sims[[s]][[n]][[r]]$index[1:NPresences[n]]
+        presences2 <-
+          sims[[s]][[n]][[r]]$index[seq(from=1, to=2*NPresences[n], by=2)]
+        thing <- rep(1:4, NPresences[n]/2)
+        presences3 <- sims[[s]][[n]][[r]]$index[thing==1 | thing==4]
+        
+       NAbsences <- (NSites - 2*NPresences[n])/2
+       absences <- sites[! sites %in% sims[[s]][[n]][[r]]$index]
+       absences1 <- sample(absences, NAbsences, replace=F)
+       absences2 <- sample(absences, NAbsences, replace=F)
+       absences3 <- sample(absences, NAbsences, replace=F)
+       one <- c(presences1, absences1)
+       two <- c(presences2, absences2)
+       three <- c(presences3, absences3)
+       for (k in 1:NSites) {
+        if(k %in% one) {
+      sims[[s]][[n]][[r]]$split1[k] <- 1
+        }
+         else{sims[[s]][[n]][[r]]$split1[k] <- 2}
+       }
+       
+       for (k in 1:NSites) {
+        if(k %in% two) {
+      sims[[s]][[n]][[r]]$split2[k] <- 1
+        }
+         else{sims[[s]][[n]][[r]]$split2[k] <- 2}
+       }
+       
+       for (k in 1:NSites) {
+        if(k %in% three) {
+      sims[[s]][[n]][[r]]$split3[k] <- 1
+        }
+         else{sims[[s]][[n]][[r]]$split3[k] <- 2}
+       }
+       
+       
+  }
+}
+}
+
+
+save(sims, file="../data/sims_data.RData")
+
+```
+## Checking that simulation worked 
+
+## Do the splits separate species into halves correctly?
+
+Just pick one to look at, wide-average size 4 replicate 1:
+
+```{r check splits, fig.show="hold", out.width="33%"}
+load("../data/sims_data.RData")
+replicates <- paste0("rep", 1:30)
+NPresences <- c(64, 32, 16, 8, 4, 2)
+sizes <- paste0("size", NPresences)# Desired sample size
+species <- c("wide_avg", "wide_ext",
+             "narrow_avg", "narrow_ext")
+splits <- paste0("split", 1:3)
+row.names(south) <- 1:474
+temp <- south
+temp$YSim  <- sims$wide_avg$size4$rep1$YSim
+temp$YSim <- as.matrix(temp$YSim)
+temp$YSim <- temp$YSim[,1]
+temp$split1 <- sims$wide_avg$size4$rep1$split1
+temp$split2 <- sims$wide_avg$size4$rep1$split2
+temp$split3 <- sims$wide_avg$size4$rep1$split3
+
+ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+  #Group 1
+geom_point(data=temp[temp$YSim==1,], aes(x=long, y=lat, fill=split1), shape=21) +
+  geom_point(data=temp[temp$YSim==0,], aes(x=long, y=lat, color=split1), shape=4) +coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -75), ylim=c(25, 40))
+
+ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=temp[temp$YSim==1,], aes(x=long, y=lat, fill=split2), shape=21) +
+  geom_point(data=temp[temp$YSim==0,], aes(x=long, y=lat, color=split2), shape=4) +coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -75), ylim=c(25, 40))
+
+ggplot() +
+  geom_polygon(data=us, aes(x=long, y=lat, 
+  group=group), colour="grey20", fill="grey80") +
+geom_point(data=temp[temp$YSim==1,], aes(x=long, y=lat, fill=split3), shape=21) +
+  geom_point(data=temp[temp$YSim==0,], aes(x=long, y=lat, color=split3), shape=4) +coord_map(projection = "albers", lat0=39, lat1=40, xlim=c(-100, -75), ylim=c(25, 40))
+```
+
+
++ For each of the data splits, calculate the probability of presence by adding up $L$ for each of the sites at which the species is present. There will be 6 of these values for each of the 30 replicates for one species at each level of sample size. 
+
+```{r splits, eval=F, include=F}
+one <- NULL
+two <- NULL
+one$YSim <- sims[[s]][[n]][[r]]$YSim[sims[[s]][[n]][[r]]$split1==1,]
+one$L    <- sims[[s]]$L[sims[[s]][[n]][[r]]$split1==1]
+two$YSim <- sims[[s]][[n]][[r]]$YSim[sims[[s]][[n]][[r]]$split1==2,]
+two$L    <- sims[[s]]$L[sims[[s]][[n]][[r]]$split1==2]
+
+sum(one$L[which(one$YSim==1)])
+sum(two$L[which(two$YSim==1)])
+
+
+
+
+
+```
+## Are the presences selected such that sites with the highest probability of presence are selected more often? 
+```{r probability of presence}
+par(mfrow=c(1,2))
+for ( s in 1:4){
+  for (n in 1:6){
+    for (r in 1:4) {
+hist(sims[[s]]$L, breaks=100, main=paste0(species[s], sizes[n], replicates[r]))
+abline(v=sims[[s]]$L[sims[[s]][[n]][[r]]$YSim==1], col="red")
+    }
+  }
+}
+
+```
+      
+      + For each sample-size x species category, make a histogram of the site IDs that are selected. Ideally there should be some variation here, in that each of the 30 replicates have different sites at which the species is present.
+
+
+### Plot in niche space
+### (a) Wide Niche - Community Average
+
+Note: For brevity, only the first 3 reps of the first 10 simulated species are shown 
+

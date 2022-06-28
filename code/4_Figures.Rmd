@@ -1,0 +1,2016 @@
+---
+title: "Figures"
+author: "K. D. Erickson"
+date: '2022-04-18'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Setup
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(knitr)
+library(viridis)
+library(Hmsc)
+library(ggplot2)
+library(tidyverse)
+library(gridExtra)
+library(dplyr)
+library(hrbrthemes)
+library(mvtnorm)
+library(flextable)
+library(gtable)
+library(grid)
+library(ggpubr)
+library(monochromeR)
+library(RColorBrewer)
+library(raster)
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+my.palette <- cbPalette[3:8]
+
+blend <- function(color) {
+  monochromeR::generate_palette(color, blend_colour="#2C3D4F", n_colours=10)[2]
+}
+blend("green")
+
+species <- c("wide_avg", "wide_ext", "narrow_avg", "narrow_ext")
+sizes <- c("64", "32", "16", "8", "4", "2")
+
+load("../data/south.RData")
+load("../data/X_bar.RData")
+
+cols <- c("#d7191c", #dark red
+          "#fdae61", #light red
+          "#ffffbf", #yellow
+          "#abd9e9", #light blue
+          "#2c7bb6" #dark blue
+          ) 
+mu_ext <- c(-3.5, 2)
+Sigma_narrow <- diag(c(0.9, 2.5))
+
+mu_avg <- c(X_bar$mu_PC1[64], X_bar$mu_PC3[64])
+Sigma_wide <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T)^2,  quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)^2))
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+colors <- c("Wide Average" = cols[1],
+            "Narrow Average" = cols[2],
+            "Wide Extreme" = cols[5],
+            "Narrow Extreme" = cols[4])
+
+NSites <- length(south$long)
+row.names(south) <- 1:NSites
+replicates <- paste0("rep", 1:30)
+NPresences <- c(64, 32, 16, 8, 4, 2)
+sizes <- paste0("size", NPresences)# Desired sample size
+species <- c("wide_avg", "wide_ext",
+             "narrow_avg", "narrow_ext")
+models <- c("HMSC_single_simple", "HMSC_joint_simple", "ESM", "ESM_bivariate")
+
+load("../data/models/HMSC_single_simple/results3.RData")
+results_single <- results
+results_single$model <- rep(models[1], length(results_single$species))
+rm(results)
+load("../data/models/HMSC_joint_simple/results3.RData")
+results_joint <- results
+results_joint$model <- rep(models[2], length(results_joint$species))
+rm(results)
+
+
+dat_single <- subset(results_single, results_single$Rhat < 1.2)
+dat_joint <- subset(results_joint, results_joint$Rhat < 1.2)
+
+load("../data/models/ESM/results3.RData")
+results_ESM <- results
+results_ESM$model <- rep(models[3], length(results_ESM$species))
+rm(results)
+
+dat_ESM <- subset(results_ESM, !is.na(results_ESM$AUC_weighted))
+names(dat_ESM)[21] <- "varPC2Response"
+
+#ESM_bivariate
+ load("../data/models/ESM_bivariate/results3.RData")
+results_ESM_bivariate <- results
+results_ESM_bivariate$model <- rep(models[4], length(results_ESM_bivariate$species))
+rm(results)
+
+dat_ESM_bivariate <- subset(results_ESM_bivariate, !is.na(results_ESM_bivariate$AUC_weighted))
+names(dat_ESM_bivariate)[21] <- "varPC2Response"
+
+mergeCols <- names(dat_single)
+dat2 <- merge(dat_single, dat_joint, 
+              by=mergeCols, all=T)
+dat2 <- merge(dat2, dat_ESM, 
+              by=mergeCols, all=T)
+dat2 <- merge(dat2, dat_ESM_bivariate, by=mergeCols, all=T)
+#DataSet that includes unconverged models 
+dat_full <- merge(results_single, results_joint, 
+              by=mergeCols, all=T)
+dat_full <- merge(dat_full, dat_ESM, 
+              by=mergeCols, all=T)
+dat_full <- merge(dat_full, dat_ESM_bivariate, by=mergeCols, all=T)
+
+dat_wide_avg <- subset(dat2, dat2$species == "wide_avg")
+dat_wide_avg_full <- subset(dat_full, dat_full$species == "wide_avg")
+
+dat_wide_ext <- subset(dat2, dat2$species == "wide_ext")
+dat_wide_ext_full <- subset(dat_full, dat_full$species == "wide_ext")
+
+dat_narrow_avg <- subset(dat2, dat2$species == "narrow_avg")
+dat_narrow_avg_full <- subset(dat_full, dat_full$species == "narrow_avg")
+
+dat_narrow_ext <- subset(dat2, dat2$species == "narrow_ext")
+dat_narrow_ext_full <- subset(dat_full, dat_full$species == "narrow_ext")
+
+dat_wide_avg$model <- recode(dat_wide_avg$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+dat_wide_avg_full$model <- recode(dat_wide_avg_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_wide_ext$model <- recode(dat_wide_ext$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+dat_wide_ext_full$model <- recode(dat_wide_ext_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_narrow_avg$model <- recode(dat_narrow_avg$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+dat_narrow_avg_full$model <- recode(dat_narrow_avg_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_narrow_ext$model <- recode(dat_narrow_ext$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+dat_narrow_ext_full$model <- recode(dat_narrow_ext_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+
+sample_size_wide_avg = dat_wide_avg %>% group_by(model, size) %>% summarize(num=n())
+sample_size_wide_ext = dat_wide_ext %>% group_by(model, size) %>% summarize(num=n())
+sample_size_narrow_avg = dat_narrow_avg %>% group_by(model, size) %>% summarize(num=n())
+sample_size_narrow_ext = dat_narrow_ext %>% group_by(model, size) %>% summarize(num=n())
+
+cols <- c("#a6cee3",
+          "#1f78b4",
+          "#b2df8a",
+          "#33a02c")
+
+
+#Change order and levels of size from "size64":"size2" to "2":"16"
+dat_wide_avg2 <- dat_wide_avg
+dat_wide_ext2 <- dat_wide_ext
+dat_narrow_avg2 <- dat_narrow_avg
+dat_narrow_ext2 <- dat_narrow_ext
+
+dat_wide_avg2$size <- dat_wide_avg$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_wide_ext2$size <- dat_wide_ext$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_narrow_avg2$size <- dat_narrow_avg$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_narrow_ext2$size <- dat_narrow_ext$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+
+wide_avg_df<- dat_wide_avg2 %>% group_by(species, size, model) %>% summarise(value=median(AUC_weighted))
+
+wide_ext_df<- dat_wide_ext2 %>% group_by(species, size, model) %>% summarise(value=median(AUC_weighted))
+
+narrow_avg_df<- dat_narrow_avg2 %>% group_by(species, size, model) %>% summarise(value=median(AUC_weighted))
+
+narrow_ext_df<- dat_narrow_ext2 %>% group_by(species, size, model) %>% summarise(value=median(AUC_weighted))
+
+###
+dat_wide_avg2$model <- factor(dat_wide_avg2$model)
+dat_wide_ext2$model <- factor(dat_wide_ext2$model)
+dat_narrow_avg2$model <-factor(dat_narrow_avg2$model)
+dat_narrow_ext2$model <- factor(dat_narrow_ext2$model)
+
+#Calculate plotting positions
+#Wide Avg
+for (i in 1:length(dat_wide_avg2$model)) {
+  if(dat_wide_avg2$model[i] == "ESM") {
+  dat_wide_avg2$pos[i] = as.numeric(dat_wide_avg2$size[i]) - 0.3
+  }
+  if(dat_wide_avg2$model[i] == "ESM_bivariate") {
+  dat_wide_avg2$pos[i] = as.numeric(dat_wide_avg2$size[i]) - 0.1
+  }
+
+  if(dat_wide_avg2$model[i] == "Single") {
+   dat_wide_avg2$pos[i] = as.numeric(dat_wide_avg2$size[i]) + 0.1}
+   
+   if(dat_wide_avg2$model[i] == "Joint") {
+   dat_wide_avg2$pos[i] = as.numeric(dat_wide_avg2$size[i]) + 0.3
+  }
+  }
+
+
+#Wide Ext
+for (i in 1:length(dat_wide_ext2$model)) {
+  if(dat_wide_ext2$model[i] == "ESM") {
+  dat_wide_ext2$pos[i] = as.numeric(dat_wide_ext2$size[i]) - 0.3
+  }
+  if(dat_wide_ext2$model[i] == "ESM_bivariate") {
+  dat_wide_ext2$pos[i] = as.numeric(dat_wide_ext2$size[i]) - 0.1
+  }
+
+  if(dat_wide_ext2$model[i] == "Single") {
+   dat_wide_ext2$pos[i] = as.numeric(dat_wide_ext2$size[i]) + 0.1}
+   
+   if(dat_wide_ext2$model[i] == "Joint") {
+   dat_wide_ext2$pos[i] = as.numeric(dat_wide_ext2$size[i]) + 0.3
+  }
+  }
+
+#Narrow Avg
+
+for (i in 1:length(dat_narrow_avg2$model)) {
+  if(dat_narrow_avg2$model[i] == "ESM") {
+  dat_narrow_avg2$pos[i] = as.numeric(dat_narrow_avg2$size[i]) - 0.3
+  }
+  if(dat_narrow_avg2$model[i] == "ESM_bivariate") {
+  dat_narrow_avg2$pos[i] = as.numeric(dat_narrow_avg2$size[i]) - 0.1
+  }
+
+  if(dat_narrow_avg2$model[i] == "Single") {
+   dat_narrow_avg2$pos[i] = as.numeric(dat_narrow_avg2$size[i]) + 0.1}
+   
+   if(dat_narrow_avg2$model[i] == "Joint") {
+   dat_narrow_avg2$pos[i] = as.numeric(dat_narrow_avg2$size[i]) + 0.3
+  }
+  }
+
+#Narrow Ext
+
+for (i in 1:length(dat_narrow_ext2$model)) {
+  if(dat_narrow_ext2$model[i] == "ESM") {
+  dat_narrow_ext2$pos[i] = as.numeric(dat_narrow_ext2$size[i]) - 0.3
+  }
+  if(dat_narrow_ext2$model[i] == "ESM_bivariate") {
+  dat_narrow_ext2$pos[i] = as.numeric(dat_narrow_ext2$size[i]) - 0.1
+  }
+
+  if(dat_narrow_ext2$model[i] == "Single") {
+   dat_narrow_ext2$pos[i] = as.numeric(dat_narrow_ext2$size[i]) + 0.1}
+   
+   if(dat_narrow_ext2$model[i] == "Joint") {
+   dat_narrow_ext2$pos[i] = as.numeric(dat_narrow_ext2$size[i]) + 0.3
+  }
+  }
+
+## 
+sample_size_wide_avg$size <- sample_size_wide_avg$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+sample_size_wide_ext$size <- sample_size_wide_ext$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+sample_size_narrow_avg$size <- sample_size_narrow_avg$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+sample_size_narrow_ext$size <- sample_size_narrow_ext$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+#Wide Avg
+sample_size_wide_avg$model <- factor(sample_size_wide_avg$model)
+
+for (i in 1:length(sample_size_wide_avg$model)) {
+  if(sample_size_wide_avg$model[i] == "ESM") {
+  sample_size_wide_avg$pos[i] = as.numeric(sample_size_wide_avg$size[i]) - 0.3
+  }
+  if(sample_size_wide_avg$model[i] == "ESM_bivariate") {
+  sample_size_wide_avg$pos[i] = as.numeric(sample_size_wide_avg$size[i]) - 0.1
+  }
+
+  if(sample_size_wide_avg$model[i] == "Single") {
+   sample_size_wide_avg$pos[i] = as.numeric(sample_size_wide_avg$size[i]) + 0.1}
+   
+   if(sample_size_wide_avg$model[i] == "Joint") {
+   sample_size_wide_avg$pos[i] = as.numeric(sample_size_wide_avg$size[i]) + 0.3
+  }
+}
+
+#Wide Ext
+sample_size_wide_ext$model <- factor(sample_size_wide_ext$model)
+
+for (i in 1:length(sample_size_wide_ext$model)) {
+  if(sample_size_wide_ext$model[i] == "ESM") {
+  sample_size_wide_ext$pos[i] = as.numeric(sample_size_wide_ext$size[i]) - 0.3
+  }
+  if(sample_size_wide_ext$model[i] == "ESM_bivariate") {
+  sample_size_wide_ext$pos[i] = as.numeric(sample_size_wide_ext$size[i]) - 0.1
+  }
+
+  if(sample_size_wide_ext$model[i] == "Single") {
+   sample_size_wide_ext$pos[i] = as.numeric(sample_size_wide_ext$size[i]) + 0.1}
+   
+   if(sample_size_wide_ext$model[i] == "Joint") {
+   sample_size_wide_ext$pos[i] = as.numeric(sample_size_wide_ext$size[i]) + 0.3
+  }
+}
+
+#Narrow Avg
+sample_size_narrow_avg$model <- factor(sample_size_narrow_avg$model)
+
+for (i in 1:length(sample_size_narrow_avg$model)) {
+  if(sample_size_narrow_avg$model[i] == "ESM") {
+  sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) - 0.3
+  }
+  if(sample_size_narrow_avg$model[i] == "ESM_bivariate") {
+  sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) - 0.1
+  }
+
+  if(sample_size_narrow_avg$model[i] == "Single") {
+   sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) + 0.1}
+   
+   if(sample_size_narrow_avg$model[i] == "Joint") {
+   sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) + 0.3
+  }
+}
+
+#Narrow Ext
+sample_size_narrow_ext$model <- factor(sample_size_narrow_ext$model)
+
+for (i in 1:length(sample_size_narrow_ext$model)) {
+  if(sample_size_narrow_ext$model[i] == "ESM") {
+  sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) - 0.3
+  }
+  if(sample_size_narrow_ext$model[i] == "ESM_bivariate") {
+  sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) - 0.1
+  }
+
+  if(sample_size_narrow_ext$model[i] == "Single") {
+   sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) + 0.1}
+   
+   if(sample_size_narrow_ext$model[i] == "Joint") {
+   sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) + 0.3
+  }
+}
+
+
+dat_full <- merge(results_single, results_joint, 
+              by=mergeCols, all=T)
+
+dat_full <- merge(dat_full, dat_ESM, 
+              by=mergeCols, all=T)
+dat_full <- merge(dat_full, dat_ESM_bivariate, by=mergeCols, all=T)
+
+dat_wide_avg_full <- subset(dat_full, dat_full$species == "wide_avg")
+dat_wide_ext_full <- subset(dat_full, dat_full$species=="wide_ext")
+dat_narrow_avg_full <-
+  subset(dat_full, dat_full$species=="narrow_avg")
+dat_narrow_ext_full <- subset(dat_full, dat_full$species=="narrow_ext")
+
+
+#Rename 
+dat_wide_avg_full$model <- recode(dat_wide_avg_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_wide_ext_full$model <- recode(dat_wide_ext_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_narrow_avg_full$model <- recode(dat_narrow_avg_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+dat_narrow_ext_full$model <- recode(dat_narrow_ext_full$model, HMSC_single_simple = "Single", HMSC_joint_simple = "Joint")
+
+#Factor levels
+dat_wide_avg_full$size <- dat_wide_avg_full$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_wide_ext_full$size <- dat_wide_ext_full$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_narrow_avg_full$size <- dat_narrow_avg_full$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_narrow_ext_full$size <- dat_narrow_ext_full$size %>% recode("size2"="2", "size4" = "4", "size8"="8", "size16"="16", "size32"="32",
+"size64"="64") %>%
+factor(levels=c("2", "4", "8", "16", "32","64"))
+
+dat_wide_avg_full$model <- factor(dat_wide_avg_full$model)
+dat_wide_ext_full$model <- factor(dat_wide_ext_full$model)
+dat_narrow_avg_full$model <-factor( dat_narrow_avg_full$model)
+dat_narrow_ext_full$model <- factor(dat_narrow_ext_full$model)
+
+#Calculate plotting position
+#Wide Average
+for (i in 1:length(dat_wide_avg_full$model)) {
+  if(dat_wide_avg_full$model[i] == "ESM") {
+  dat_wide_avg_full$pos[i] = as.numeric(dat_wide_avg_full$size[i]) - 0.3 + 0.1
+  }
+  if(dat_wide_avg_full$model[i] == "ESM_bivariate") {
+  dat_wide_avg_full$pos[i] = as.numeric(dat_wide_avg_full$size[i]) - 0.1 + 0.1
+  }
+
+  if(dat_wide_avg_full$model[i] == "Single") {
+   dat_wide_avg_full$pos[i] = as.numeric(dat_wide_avg_full$size[i]) + 0.1 + 0.1}
+   
+   if(dat_wide_avg_full$model[i] == "Joint") {
+   dat_wide_avg_full$pos[i] = as.numeric(dat_wide_avg_full$size[i]) + 0.3 +0.1
+  }
+  }
+
+#Wide Extreme
+for (i in 1:length(dat_wide_ext_full$model)) {
+  if(dat_wide_ext_full$model[i] == "ESM") {
+  dat_wide_ext_full$pos[i] = as.numeric(dat_wide_ext_full$size[i]) - 0.3 + 0.1
+  }
+  if(dat_wide_ext_full$model[i] == "ESM_bivariate") {
+  dat_wide_ext_full$pos[i] = as.numeric(dat_wide_ext_full$size[i]) - 0.1 + 0.1
+  }
+
+  if(dat_wide_ext_full$model[i] == "Single") {
+   dat_wide_ext_full$pos[i] = as.numeric(dat_wide_ext_full$size[i]) + 0.1 + 0.1}
+   
+   if(dat_wide_ext_full$model[i] == "Joint") {
+   dat_wide_ext_full$pos[i] = as.numeric(dat_wide_ext_full$size[i]) + 0.3 + 0.1
+  }
+  }
+
+#Narrow Average
+for (i in 1:length(dat_narrow_avg_full$model)) {
+  if(dat_narrow_avg_full$model[i] == "ESM") {
+  dat_narrow_avg_full$pos[i] = as.numeric(dat_narrow_avg_full$size[i]) - 0.3 + 0.1
+  }
+  if(dat_narrow_avg_full$model[i] == "ESM_bivariate") {
+  dat_narrow_avg_full$pos[i] = as.numeric(dat_narrow_avg_full$size[i]) - 0.1 + 0.1
+  }
+
+  if(dat_narrow_avg_full$model[i] == "Single") {
+   dat_narrow_avg_full$pos[i] = as.numeric(dat_narrow_avg_full$size[i]) + 0.1 + 0.1}
+   
+   if(dat_narrow_avg_full$model[i] == "Joint") {
+   dat_narrow_avg_full$pos[i] = as.numeric(dat_narrow_avg_full$size[i]) + 0.3 + 0.1
+  }
+  }
+
+#Narrow Extreme
+for (i in 1:length(dat_narrow_ext_full$model)) {
+  if(dat_narrow_ext_full$model[i] == "ESM") {
+  dat_narrow_ext_full$pos[i] = as.numeric(dat_narrow_ext_full$size[i]) - 0.3 + 0.1
+  }
+  if(dat_narrow_ext_full$model[i] == "ESM_bivariate") {
+  dat_narrow_ext_full$pos[i] = as.numeric(dat_narrow_ext_full$size[i]) - 0.1 + 0.1
+  }
+
+  if(dat_narrow_ext_full$model[i] == "Single") {
+   dat_narrow_ext_full$pos[i] = as.numeric(dat_narrow_ext_full$size[i]) + 0.1+0.1}
+   
+   if(dat_narrow_ext_full$model[i] == "Joint") {
+   dat_narrow_ext_full$pos[i] = as.numeric(dat_narrow_ext_full$size[i]) + 0.3 +0.1
+  }
+  }
+
+colsList <- brewer.pal(6, "Dark2")
+```
+
+
+# Figure 1: Real Species Niches
+Color scheme chosen from https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
+
+
+
+
+## Calculate 1000 iterations of species 
+```{r}
+NSites <- length(south$long)
+replicates <- paste0("rep", 1:1000)
+NPresences <- c(64)
+sizes <- paste0("size", NPresences)
+species <- c("wide_avg", "wide_ext",
+             "narrow_avg", "narrow_ext")
+
+
+estSp <- vector("list", length(species))
+names(estSp) <- species
+for(s in 1:length(species)){
+  estSp[[s]] <- vector("list", length(NPresences))
+  names(estSp[[s]]) <- sizes
+  for(n in 1:length(NPresences)) {
+    estSp[[s]][[n]] <- vector("list", length(replicates))
+    names(estSp[[s]][[n]]) <- replicates
+  
+  }}   
+    
+    
+   
+
+for (s in 1:length(species)) {
+      switch(species[s],
+          "wide_avg"={
+            estSp[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean=mu_avg,
+                      sigma=Sigma_wide )
+            
+          },
+          "wide_ext" = {
+            estSp[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean = mu_ext,
+                      sigma=Sigma_wide )
+          },
+            "narrow_avg" = {
+            estSp[[s]]$L <-
+              dmvnorm(south[,c(3,5)],
+                      mean = mu_avg,
+                      sigma=Sigma_narrow)
+          },
+             "narrow_ext" = {
+            estSp[[s]]$L <-
+             dmvnorm(south[,c(3,5)],
+                      mean = mu_ext,
+                      sigma=Sigma_narrow)
+          })#end of switch
+        
+  for(n in 1:length(sizes)) {
+   
+    for(r in 1:length(replicates)){
+        estSp[[s]][[n]][[r]]$index <- matrix(ncol=(NPresences[n]))
+        estSp[[s]][[n]][[r]]$YSim <- matrix(0, nrow=NSites, ncol=1)
+        estSp[[s]][[n]][[r]]$YSim  <- data.frame(estSp[[s]][[n]][[r]]$YSim )
+names(estSp[[s]][[n]][[r]]$YSim ) <- "SimSp"
+        
+             estSp[[s]][[n]][[r]]$index <- sample(1:NSites, NPresences[n], replace=F, prob=estSp[[s]]$L/sum(estSp[[s]]$L))
+        
+        for(site in 1:NSites) {
+    if(site %in% estSp[[s]][[n]][[r]]$index) {
+      estSp[[s]][[n]][[r]]$YSim[site,] <- 1
+    }
+        }
+        
+        
+      
+       
+  
+       
+
+       
+       
+  }
+}
+}
+
+for (s in 1:length(species)) { 
+  for(n in 1:length(NPresences)){
+    
+X_bar2 <- data.frame(mu_PC1 = rep(0,length(replicates)+1),
+                    sd_PC1 = rep(0, length(replicates)+1),
+                    mu_PC2 = rep(0, length(replicates)+1),
+                    sd_PC2 = rep(0, length(replicates)+1),
+                    mu_PC3 = rep(0, length(replicates)+1),
+                    sd_PC3 = rep(0, length(replicates)+1),
+                    N = rep(NA, length(replicates)+1))
+
+                  
+rownames(X_bar2) <- c(paste0("sp", 1:length(replicates)), "Mean")
+
+for (j in 1:length(replicates)) {
+  temp <- cbind(south, estSp[[s]][[n]][[j]]$YSim)
+  temp <-subset(temp, temp$SimSp==1)
+  
+  X_bar2$mu_PC1[j] <- mean(temp$PC1) #mu_PC1
+  X_bar2$sd_PC1[j] <- sd(temp$PC1) #sd_PC1
+  X_bar2$min_PC1[j] <- min(temp$PC1)
+  X_bar2$max_PC1[j] <- max(temp$PC1)
+  
+  X_bar2$mu_PC2[j] <- mean(temp$PC2) #mu_PC2
+  X_bar2$sd_PC2[j] <- sd(temp$PC2) #sd_PC2
+  X_bar2$min_PC2[j] <- min(temp$PC2)
+  X_bar2$max_PC2[j] <- max(temp$PC2)
+  
+  X_bar2$mu_PC3[j] <- mean(temp$PC3) #mu_PC3
+  X_bar2$sd_PC3[j] <- sd(temp$PC3) #sd_PC3
+  X_bar2$min_PC3[j] <- min(temp$PC3)
+  X_bar2$max_PC3[j] <- max(temp$PC3)
+  X_bar2$N[j] <- length(temp$PC1)
+  
+}
+
+X_bar2$mu_PC1[length(replicates)+1] <- mean(X_bar2$mu_PC1[1:length(replicates)])
+X_bar2$sd_PC1[length(replicates)+1] <- mean(X_bar2$sd_PC1[1:length(replicates)], na.rm=T)
+X_bar2$mu_PC2 <- mean(X_bar2$mu_PC2[1:length(replicates)])
+X_bar2$sd_PC2[length(replicates)+1] <- mean(X_bar2$sd_PC2[1:length(replicates)], na.rm=T)
+X_bar2$mu_PC3[length(replicates)+1] <- mean(X_bar2$mu_PC3[1:length(replicates)])
+X_bar2$sd_PC3[length(replicates)+1] <- mean(X_bar2$sd_PC3[1:length(replicates)], na.rm=T)
+estSp[[s]][[n]]$X_bar2 <- X_bar2
+  }
+}
+rm(X_bar2)
+load("../data/X_bar.RData"
+)
+
+```
+## Plot 
+
+```{r}
+sp <- NULL
+sp
+#sp55 is only found at one site
+X_temp <- X_bar[1:63,]
+X_temp <- 
+  X_temp[order(-X_temp$sd_PC1),]
+for(i in 1:62) {
+  plot(0)
+  sp[[i]] <- data.frame(mixtools::ellipse( as.numeric(X_temp[i, c(1,5)]), diag(X_temp[i, c(2,6)]), alpha=0.32, npoints=250), draw=F, newplot=F)
+  sp[[i]]$area <- X_temp[i, 2] + X_temp[i, 6]
+}
+
+plot(0)
+ellipse_wide_avg <- data.frame(mixtools::ellipse(mu_avg, sqrt(Sigma_wide), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+sampled_wide_avg   <- data.frame(mixtools::ellipse(c(estSp$wide_avg$size64$X_bar2[1001, 1], estSp$wide_avg$size64$X_bar2[1001, 5]), diag(c(estSp$wide_avg$size64$X_bar2[1001, 2], estSp$wide_avg$size64$X_bar2[1001,6])), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+ellipse_wide_ext <- data.frame(mixtools::ellipse(mu_ext, sqrt(Sigma_wide), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+sampled_wide_ext   <- data.frame(mixtools::ellipse(c(estSp$wide_ext$size64$X_bar2[1001, 1], estSp$wide_ext$size64$X_bar2[1001, 5]), diag(c(estSp$wide_ext$size64$X_bar2[1001, 2], estSp$wide_ext$size64$X_bar2[1001,6])), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+
+ellipse_narrow_avg <- data.frame(mixtools::ellipse(mu_avg, sqrt(Sigma_narrow), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+sampled_narrow_avg   <- data.frame(mixtools::ellipse(c(estSp$narrow_avg$size64$X_bar2[1001, 1], estSp$narrow_avg$size64$X_bar2[1001, 5]), diag(c(estSp$narrow_avg$size64$X_bar2[1001, 2], estSp$narrow_avg$size64$X_bar2[1001,6])), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+
+
+ellipse_narrow_ext <- data.frame(mixtools::ellipse(mu_ext, sqrt(Sigma_narrow), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+sampled_narrow_ext   <- data.frame(mixtools::ellipse(c(estSp$narrow_ext$size64$X_bar2[1001, 1], estSp$narrow_ext$size64$X_bar2[1001, 5]), diag(c(estSp$narrow_ext$size64$X_bar2[1001, 2], estSp$narrow_ext$size64$X_bar2[1001,6])), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+g  <- 
+ggplot() +
+  geom_point(data=south, aes(x=PC1, y=PC3), shape=4)
+
+#Sp55 is only found at one site
+for ( i in 1:62) {
+  g <- g +  geom_polygon(data=sp[[i]], aes(x=X1, y=X2),fill=NA,  col=colsList[5], alpha=0.25, size=0.25)
+}
+
+g1 <- g + 
+  geom_path(data=ellipse_wide_avg, aes(x=X1, y=X2, col="Broad/Average"), size=2)  +
+  geom_polygon(data=sampled_wide_avg, aes(x=X1, y=X2, col="Broad/Average", fill="Broad/Average"), size=1, alpha=0.6) +
+  geom_path(data=ellipse_wide_ext, aes(x=X1, y=X2, col="Broad/Extreme"), size=2)  +
+  geom_polygon(data=sampled_wide_ext, aes(x=X1, y=X2, col="Broad/Extreme", fill="Broad/Extreme"), size=1, alpha=0.6) +
+   geom_path(data=ellipse_narrow_avg, aes(x=X1, y=X2, col="Narrow/Average"), size=2)  +
+  geom_polygon(data=sampled_narrow_avg, aes(x=X1, y=X2, col="Narrow/Average", fill="Narrow/Average"), size=1, alpha=0.6) +
+   geom_path(data=ellipse_narrow_ext, aes(x=X1, y=X2, col="Narrow/Extreme"), size=2)  +
+  geom_polygon(data=sampled_narrow_ext, aes(x=X1, y=X2, col="Narrow/Extreme", fill="Narrow/Extreme"), size=1, alpha=0.6) +
+    scale_color_manual(values=colsList, name="Species") +
+  scale_fill_manual(values=colsList, name="Species") +
+    geom_point(data=south, aes(x=PC1, y=PC3), shape=4)
+
+
+g1 <- g1 + theme(legend.position="top")
+  
+# pdf("./Figures/01_real_species.pdf", width=6.5,
+#     height=6.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# g1
+# dev.off()
+
+png("./Figures/01_real_species.png", width=6.5,height=6.5, pointsize=8, units="in", res=300)
+ g1
+ dev.off()
+
+png("./Figures/01_real_species.png", width=6.5, height=6.5, pointsize=8, units="in", res=300)
+g1
+dev.off()
+```
+
+
+
+
+
+# Figure 2: AUC
+
+```{r AUC}
+cols <-c("#e66101", "#fdb863",
+          "#5e3c99", "#b2abd2")
+p1 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(a)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC")
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") + theme(plot.title = element_text(hjust = 0.5))
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") +  theme(plot.title = element_text(hjust = 0.5))
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") +  theme(plot.title = element_text(hjust = 0.5))
+
+p5 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(b)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( expression(paste("Tjurs R"^2)))
+
+p6 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( "Tjurs R2") + ggtitle("Broad/Extreme")
+
+p7 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( "Tjurs R2") + ggtitle("Narrow/Average")
+
+p8 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( expression(paste("Tjurs R"^2))) + ggtitle("Narrow/Extreme")
+
+#AUCpr
+p9 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Full", "ESM:Bivariate", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(c)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( expression(paste("AUC"[pr])))
+
+p10 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Broad/Extreme")
+
+p11 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Narrow/Average")
+
+p12 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Narrow/Extreme")
+
+
+
+
+ 
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p6 <- p6 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p7 <- p7 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p8 <- p8 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p10 <- p10 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p11 <- p11 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p12 <- p12 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p1 <- p1 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+#top, right, bottom, left
+
+p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p5 <- p5 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p6 <- p6 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p7 <- p7 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p8 <- p8 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p9 <- p9 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p10 <- p10 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p11 <- p11 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p12 <- p12 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+# pdf("./Figures/02_Discrimination.pdf", width=6.5,
+#     height=10.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1, p2, p3, p4,
+#           p5, p6, p7, p8,
+#           p9, p10, p11, p12, widths=c(3.9, 3, 3, 3,
+#          3.8, 3, 3, 3,
+#          3.7, 3, 3, 3),
+# ncol=4, nrow=3, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+# #top, right, bottom, left
+# dev.off()
+
+png("./Figures/03_Discrimination.png", width=6.5,
+    height=10.5, pointsize=8, units="in", res=300)
+ggarrange(p1, p2, p3, p4,
+          p5, p6, p7, p8,
+          p9, p10, p11, p12, widths=c(3.9, 3, 3, 3,
+         3.8, 3, 3, 3,
+         3.7, 3, 3, 3),
+ncol=4, nrow=3, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+
+
+
+
+#2.84
+
+```
+# Figure S2: AUC_All models
+
+```{r}
+p1 <- ggplot() + 
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(a)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC")
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") + theme(plot.title = element_text(hjust = 0.5))
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") +  theme(plot.title = element_text(hjust = 0.5))
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=AUC_weighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=AUC_weighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.135, 1.06) + ylab( "AUC") +  theme(plot.title = element_text(hjust = 0.5))
+
+p5 <- ggplot() + 
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(b)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( expression(paste("Tjurs R"^2)))
+
+p6 <- ggplot() + 
+    stat_summary(data=dat_wide_ext_full, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( "Tjurs R2") + ggtitle("Broad/Extreme")
+
+p7 <- ggplot() + 
+    stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( "Tjurs R2") + ggtitle("Narrow/Average")
+
+p8 <- ggplot() + 
+    stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=TjursR2, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-0.025, 0.4) + ylab( expression(paste("Tjurs R"^2))) + ggtitle("Narrow/Extreme")
+
+#AUCpr
+p9 <- ggplot() + 
+    stat_summary(data=dat_wide_avg_full, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y= pr_integral, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Full", "ESM:Bivariate", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(c)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( expression(paste("AUC"[pr])))
+
+p10 <- ggplot() + 
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y= pr_integral, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Broad/Extreme")
+
+p11 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y= pr_integral, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Narrow/Average")
+
+p12 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y= pr_integral, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0,0.8) + ylab( "AUCpr") + ggtitle("Narrow/Extreme")
+
+
+
+
+ 
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p6 <- p6 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p7 <- p7 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p8 <- p8 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p10 <- p10 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p11 <- p11 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p12 <- p12 +   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p1 <- p1 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+#top, right, bottom, left
+
+p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p5 <- p5 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p6 <- p6 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p7 <- p7 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p8 <- p8 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p9 <- p9 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p10 <- p10 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p11 <- p11 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p12 <- p12 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+# pdf("./Figures/S2_Discrimination_ALL_MODELS.pdf", width=6.5,
+#     height=10.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1, p2, p3, p4,
+#           p5, p6, p7, p8,
+#           p9, p10, p11, p12, widths=c(3.9, 3, 3, 3,
+#          3.8, 3, 3, 3,
+#          3.7, 3, 3, 3),
+# ncol=4, nrow=3, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+# #top, right, bottom, left
+# dev.off()
+
+png("./Figures/S4_Discrimination_ALL_MODELS2.png", width=7,
+    height=10.5, pointsize=8, units="in", res=300)
+ggarrange(p1, p2, p3, p4,
+          p5, p6, p7, p8,
+          p9, p10, p11, p12, widths=c(3.9, 3, 3, 3,
+         3.8, 3, 3, 3,
+         3.7, 3, 3, 3),
+ncol=4, nrow=3, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+```
+# Figure S1: RMSE
+
+```{r RMSE}
+p1 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+ 
+ p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+ 
+
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+# pdf("./Figures/S1_RMSE.pdf", width=6.5,
+#     height=3.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+# ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+# #top, right, bottom, left
+# dev.off()
+
+png("./Figures/S2_RMSE.png", width=6.5,
+    height=3.5, pointsize=8,
+units="in", res=300)
+ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+
+
+
+```
+
+#Figure S3: RMSE_ALL MODELS
+```{r}
+p1 <- ggplot() + 
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Joint", "Single"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0.54, 1.01) + ylab( "Weighted RMSE")
+
+ 
+ p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+ 
+
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+# pdf("./Figures/S3_RMSE_FULL.pdf", width=6.5,
+#     height=3.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+# ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+# #top, right, bottom, left
+# dev.off()
+
+png("./Figures/S2_RMSE_FULL.png", width=6.5,
+    height=3.5, pointsize=8,
+units="in", res=300)
+ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+```
+# Figure 3: Calibration
+
+```{r calibration}
+
+p1 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(a)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p5 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(b)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response") 
+
+p6 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")  
+
+p7 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")  
+
+p8 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")    
+
+
+p9 <- ggplot() + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(c)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+p10 <- ggplot() + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+
+p11 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+p12 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+ 
+
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p6 <- p6 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p7 <- p7 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p8 <- p8 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p10 <- p10 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p11 <- p11 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p12 <- p12 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+
+
+# pdf("./Figures/04_PC_alignment.pdf", width=6.5,
+#     height=8, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1,p2, p3, p4,p5, p6, p7, p8, p9, p10, p11, p12, widths=c( 
+#   2,1.5, 1.5, 1.5,
+#   2, 1.5, 1.5, 1.5, 
+#   2, 1.5, 1.5, 1.5), 
+#   heights= c(
+#   2, 2, 2, 2,
+#   2, 1.2, 1.2, 1.2,
+#   2, 1.2, 1.2, 1.2
+#   ), ncol=4, nrow=3, common.legend=T)
+# 
+# dev.off()
+
+png("./Figures/04_PC_alignment.png", width=6.5,
+    height=8, pointsize=8,
+units="in", res=300)
+ggarrange(p1,p2, p3, p4,p5, p6, p7, p8, p9, p10, p11, p12, widths=c( 
+  2,1.5, 1.5, 1.5,
+  2, 1.5, 1.5, 1.5, 
+  2, 1.5, 1.5, 1.5), 
+  heights= c(
+  2, 2, 2, 2,
+  2, 1.2, 1.2, 1.2,
+  2, 1.2, 1.2, 1.2
+  ), ncol=4, nrow=3, common.legend=T)
+
+dev.off()
+```
+
+```{r calibration_full}
+
+p1 <- ggplot() + 
+   stat_summary(data=dat_wide_avg_full, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(a)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p2 <- ggplot() + 
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p3 <- ggplot() + 
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+p4 <- ggplot() + 
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC1")
+
+
+p5 <- ggplot() + 
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(b)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response") 
+
+p6 <- ggplot() + 
+   stat_summary(data=dat_wide_ext_full, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")  
+
+p7 <- ggplot() + 
+   stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")  
+
+p8 <- ggplot() + 
+   stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+   geom_hline(yintercept=0, linetype="dashed", size=.5, color="black") +
+   scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(0, 0.5) + ylab( "SD PC2 Response")    
+
+
+p9 <- ggplot() + 
+   stat_summary(data=dat_wide_avg_full, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_avg_full, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_avg2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("(c)Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+p10 <- ggplot() + 
+   stat_summary(data=dat_wide_ext_full, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_wide_ext_full, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_wide_ext2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+
+p11 <- ggplot() + 
+   stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_avg_full, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_avg2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+p12 <- ggplot() + 
+   stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5, alpha=0.5, linetype="dashed") +
+  stat_summary(data=dat_narrow_ext_full, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line", alpha=0.5, linetype="dashed") + 
+  stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+stat_summary(data=dat_narrow_ext2, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+scale_shape_manual(values=c(15:18), labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+   ylim(-1, 1) + ylab( "Rank Correlation PC3")
+
+ 
+
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p6 <- p6 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p7 <- p7 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p8 <- p8 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p10 <- p10 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p11 <- p11 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+p12 <- p12 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+
+
+# pdf("./Figures/S5_PC_alignment.pdf", width=6.5,
+#     height=8, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1,p2, p3, p4,p5, p6, p7, p8, p9, p10, p11, p12, widths=c( 
+#   2,1.5, 1.5, 1.5,
+#   2, 1.5, 1.5, 1.5, 
+#   2, 1.5, 1.5, 1.5), 
+#   heights= c(
+#   2, 2, 2, 2,
+#   2, 1.2, 1.2, 1.2,
+#   2, 1.2, 1.2, 1.2
+#   ), ncol=4, nrow=3, common.legend=T)
+# 
+# dev.off()
+
+png("./Figures/S5_PC_alignment.png", width=6.5,
+    height=8, pointsize=8,
+units="in", res=300)
+ggarrange(p1,p2, p3, p4,p5, p6, p7, p8, p9, p10, p11, p12, widths=c( 
+  2,1.5, 1.5, 1.5,
+  2, 1.5, 1.5, 1.5, 
+  2, 1.5, 1.5, 1.5), 
+  heights= c(
+  2, 2, 2, 2,
+  2, 1.2, 1.2, 1.2,
+  2, 1.2, 1.2, 1.2
+  ), ncol=4, nrow=3, common.legend=T)
+
+dev.off()
+
+```
+
+# Figure 4: Converged Models
+
+```{r convergence}
+p1 <- ggplot() + 
+  geom_bar(data=sample_size_wide_avg, aes(x=pos, y=num, fill=model), stat="identity") +
+  scale_fill_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") +
+  ggtitle("Broad/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+ ylab("Converged Models") 
+
+p2 <- ggplot() + 
+  geom_bar(data=sample_size_wide_ext, aes(x=pos, y=num, fill=model), stat="identity") + scale_fill_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Broad/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+ ylab("Convergence")
+
+p3 <- ggplot() + 
+  geom_bar(data=sample_size_narrow_avg, aes(x=pos, y=num, fill=model), stat="identity") + scale_fill_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + ggtitle("Narrow/Average") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+ ylab("Convergence") 
+
+p4 <- ggplot() + 
+  geom_bar(data=sample_size_narrow_ext, aes(x=pos, y=num, fill=model), stat="identity") + scale_fill_manual(values=cols,labels=c("ESM:Complex", "ESM:Simple", "Bayesian:JSDM", "Bayesian:SSDM"), name="Model") + 
+  ggtitle("Narrow/Extreme") +
+  xlab("Presences") +
+scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+ ylab("Convergence") 
+
+p2 <- p2 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p3 <- p3 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+p4 <- p4 + 
+   theme(axis.ticks.y = element_blank(),
+         axis.title.y = element_blank(),
+        axis.text.y = element_blank()) 
+
+
+
+# pdf("./Figures/04_Convergence.pdf", width=6.5,
+#     height=2.5, pointsize=8,
+#     encoding="TeXtext.enc", onefile=F)
+# ggarrange(p1,p2, p3, p4, widths=c(2.55, 2.17, 2.17, 2.17, 2.17), ncol=4, nrow=1, common.legend=T)
+# dev.off()
+
+png("./Figures/02_Convergence.png", width=6.5,
+    height=2.5, pointsize=8,
+units="in", res=300)
+ggarrange(p1,p2, p3, p4, widths=c(2.55, 2.17, 2.17, 2.17, 2.17), ncol=4, nrow=1, common.legend=T)
+dev.off()
+
+```
+
+# Some appendix figures
+
+Are all of the species from the original dataset still present in the subsample? 
+```{r}
+
+temp <- data.frame(count=colSums(south[,6:68]), species=paste0("sp",1:ncol(south[,6:68])))
+
+pdf("./Figures/Real_Species_Num_Presences.pdf", width=6.5,
+    height=6.5, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggplot(temp, aes(x=reorder(species, count), y=count)) + 
+geom_bar( stat="identity") + coord_flip() + xlab("Species") + ylab("Number of Presences") +
+  theme(axis.text.y = element_text(size=6)) 
+dev.off()
+
+temp[] %>% 
+ arrange(count) %>%
+ kable()
+
+
+```
+
+## Box 1 ##### 
+
+```{r}
+
+dat <- data.frame (
+  r1 = 4*sqrt(runif(8,0,1)),
+  theta1 = runif(8,0,1) *2*pi,
+  r2 = 2*sqrt(runif(8,0,1)),
+  theta2 = runif(8,0,1) *2*pi,
+  r3 = 3*sqrt(runif(8,0,1)),
+  theta3=runif(8,0,1)*2*pi)
+
+dat$x1 <- 5 + dat$r1*cos(dat$theta1)
+dat$y1 <- 5 + dat$r1*sin(dat$theta1) 
+dat$x2 <- 5 + dat$r2*cos(dat$theta2)
+dat$y2 <- 5 + dat$r2*sin(dat$theta2)
+
+dat$x3 <- 5 + dat$r3*cos(dat$theta3)
+dat$y3 <- 5 + dat$r3*sin(dat$theta3)
+
+plot(0)
+wide <- data.frame(mixtools::ellipse(c(5,5), diag(c(7,7)), alpha=0.32, npoints=250), draw=F, newplot=F)
+wide2 <- data.frame(mixtools::ellipse(c(5,5), diag(c(10.5,10.5)), alpha=0.32, npoints=250), draw=F, newplot=F)
+narrow <- data.frame(mixtools::ellipse(c(5,5), diag(c(2,2)), alpha=0.32, npoints=250), draw=F, newplot=F)
+narrow2 <- data.frame(mixtools::ellipse(c(5,5), diag(c(3,3)), alpha=0.32, npoints=250), draw=F, newplot=F)
+
+pdf("./Figures/box1_wide.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+
+ggplot(dat)  +
+   xlim(0,10) + ylim(0,10) + 
+  geom_path(data=wide, aes(x=X1, y=X2), col="blue", size=1)  +
+  geom_polygon(data=wide, aes(x=X1, y=X2), col="blue", fill="blue", size=1, alpha=0.5) + geom_point(aes(x=x1, y = y1), col="black", size=5) + theme_classic() +
+  theme(
+axis.ticks.x = element_blank(),
+axis.text.x = element_blank(), 
+axis.ticks.y = element_blank(),
+axis.text.y = element_blank()) +xlab("") +ylab("")
+
+dev.off()
+
+pdf("./Figures/box1_narrow.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+
+ggplot(dat)  +
+   xlim(0,10) + ylim(0,10) + 
+  geom_path(data=narrow, aes(x=X1, y=X2), col="blue", size=2)  +
+  geom_polygon(data=narrow, aes(x=X1, y=X2), col="blue", fill="blue", size=1, alpha=0.5) + geom_point(aes(x=x2, y = y2), col="black", size=5) + theme_classic() +
+  theme(
+axis.ticks.x = element_blank(),
+axis.text.x = element_blank(), 
+axis.ticks.y = element_blank(),
+axis.text.y = element_blank()) +xlab("") +ylab("")
+
+dev.off()
+
+
+pdf("./Figures/box1_extreme.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+
+ggplot(dat)  +
+   xlim(0,5) + ylim(0,10) + 
+  geom_path(data=wide, aes(x=X1, y=X2), col="blue", size=2)  +
+  geom_polygon(data=wide, aes(x=X1, y=X2), col="blue", fill="blue", size=1, alpha=0.5) + geom_point(aes(x=x1, y = y1), col="black", size=5) + theme_classic() +
+  theme(
+axis.ticks.x = element_blank(),
+axis.text.x = element_blank(), 
+axis.ticks.y = element_blank(),
+axis.text.y = element_blank()) +xlab("") +ylab("")
+
+dev.off()
+
+
+pdf("./Figures/box1_overestimate.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+
+ggplot(dat)  +
+   xlim(0,10) + ylim(0,10) + 
+  geom_path(data=wide2, aes(x=X1, y=X2), col="blue", size=2)  +
+  geom_polygon(data=wide2, aes(x=X1, y=X2), col="blue", fill="blue", size=1, alpha=0.5) + geom_point(aes(x=x3, y = y3), col="black", size=5) + theme_classic() +
+  theme(
+axis.ticks.x = element_blank(),
+axis.text.x = element_blank(), 
+axis.ticks.y = element_blank(),
+axis.text.y = element_blank()) +xlab("") +ylab("")
+
+dev.off()
+
+
+pdf("./Figures/box1_underestimate.pdf", width=3,
+    height=3, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+
+ggplot(dat)  +
+   xlim(0,10) + ylim(0,10) + 
+  geom_path(data=narrow, aes(x=X1, y=X2), col="blue", size=2)  +
+  geom_polygon(data=narrow, aes(x=X1, y=X2), col="blue", fill="blue", size=1, alpha=0.5) + geom_point(aes(x=x3, y = y3), col="black", size=5) + theme_classic() +
+  theme(
+axis.ticks.x = element_blank(),
+axis.text.x = element_blank(), 
+axis.ticks.y = element_blank(),
+axis.text.y = element_blank()) +xlab("") +ylab("")
+
+dev.off()
+
+
+species_suit <- south
+
+species_suit$L <- dmvnorm(x=species_suit[,c(3,5)], mean=mu_avg, sigma=Sigma_wide )
+
+#SDM vs Niche
+states <- readRDS("~/Documents/GitHub/rare_species/data/GADM_3.6/gadm36_USA_1_sp.rds")
+
+SE_states <- c("Oklahoma", "Arkansas", "Tennessee", "North Carolina", "South Carolina", "Texas", "Louisiana", "Mississippi", "Alabama", "Georgia", "Florida")
+
+ SE <- states[states@data$NAME_1 %in% SE_states,]
+tmin <- raster("../data/wc2.1_10m_tmin_01.tif")
+tmin_SE <- crop(tmin, extent(SE))
+tmin_SE <- mask(tmin_SE, SE)
+
+e <- extent(-100,-82,24,35)
+tt <- crop(tmin_SE,e)
+tmin_df <- as.data.frame(tt, xy = TRUE)
+
+tmin_df$new <- dnorm(tmin_df$wc2.1_10m_tmin_01,
+                      mean = -4.72,
+                      sd=4.11 )
+
+plot_ratio <- get_asp_ratio(tt)
+pdf("./Figures/distribution.pdf", width=1.5*plot_ratio,
+    height=1.5, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggplot() +
+  geom_raster(data = tmin_df , aes(x = x, y = y, fill = new)) + 
+  coord_quickmap() + 
+  scale_fill_gradientn(colours=c("lightblue","blue"), na.value="white") +
+   xlab("") +ylab("") +
+  theme(
+    axis.line = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.ticks.length=unit(0, "pt"),
+    legend.position="none",
+    panel.background=element_blank(), 
+    panel.border = element_blank(), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.background=element_blank(),
+    plot.margin=unit(c(0,0,0,0), "mm"))
+
+
+dev.off()
+
+```
+
++
+  scale_x_continuous(limits=c(-100, -75),expand=c(0,0)) +
+scale_y_continuous(limits=c(24, 35),expand=c(0,0)) +
+
+```{r}
+p1 <- ggplot(temp3) + 
+  geom_bar(aes(x=b0_CI), stat="count") + xlab("Intercept")
+p2 <- ggplot(temp3) + 
+  geom_bar(aes(x=b1_CI), stat="count") + xlab("PC1")
+p3 <- ggplot(temp3) + 
+  geom_bar(aes(x=b2_CI), stat="count") + xlab("PC2")
+p4 <- ggplot(temp3) + 
+  geom_bar(aes(x=b3_CI), stat="count") + xlab("PC3")
+p5 <- ggplot(temp3) + 
+  geom_bar(aes(x=b4_CI), stat="count") +xlab("PC1^2")
+p6 <- ggplot(temp3) + 
+  geom_bar(aes(x=b5_CI), stat="count") + xlab("PC2^2")
+p7 <- ggplot(temp3) + 
+  geom_bar(aes(x=b6_CI), stat="count") + xlab("PC3^2")
+
+pdf("./Figures/0X_posterior_widths.pdf", width=8,
+    height=6, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggarrange(p1,p2, p3, p4,p5, p6, p7, ncol=4, nrow=2, common.legend=T)
+dev.off()
+```
+
+# Calculate Quantiles of sd_narrow
+
+```{r}
+temp_PC1 <- X_bar$sd_PC1
+temp_PC3 <- X_bar$sd_PC3
+temp_PC1 <- subset(temp_PC1, !is.na(temp_PC1)) #remove NA
+temp_PC3 <- subset(temp_PC3, !is.na(temp_PC3))
+temp_PC1 <- temp_PC1[1:62] #remove community mean
+temp_PC3 <- temp_PC3[1:62]
+
+cdf_PC1 <- ecdf(temp_PC1)
+cdf_PC1(sqrt(0.9))
+
+cdf_PC3 <- ecdf(temp_PC3)
+cdf_PC3(sqrt(2.5))
+
+1-sum(temp_PC1 > sqrt(0.9))/length(temp_PC1)
+
+1-sum(temp_PC3 > sqrt(2.5))/length(temp_PC3)
+
+1-sum(X_bar$sd_PC3 > sqrt(5.86), na.rm=T )/length(X_bar$sd_PC3)
+
+Sigma_narrow[1,1]/Sigma_wide[2,2]
+Sigma_narrow[2,2]/Sigma_wide[2,2]
+
+
+```
+
+#Calculate median AUC for narrow/extreme
+
+```{r}
+temp_SSDM <-subset( dat_narrow_ext$AUC_weighted, dat_narrow_ext$model=="Single")
+temp_JSDM <- subset(dat_narrow_ext$AUC_weighted, dat_narrow_ext$model=="Joint")
+
+median(temp_SSDM)
+median(temp_JSDM)
+```

@@ -1,7 +1,6 @@
-#01a_Visualize Simulated Species
+#01_Simulate_Species
 
-# Script for visualizing simulated species to
-# check that they are well-defined
+# Script for simulating virtual species.
 
 # Outputs of this script:
 # *south.csv

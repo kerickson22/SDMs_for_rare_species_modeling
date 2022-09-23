@@ -16,7 +16,7 @@ library(ggplot2)
 setwd(dirname(getActiveDocumentContext()$path))       # Set working directory to source file location
 
 # Define constants #####
-sizes <- c(2, 4, 8, 16, 32, 64)
+numPresences <- c(4, 8, 16, 32, 64)
 numTestPresences <- 64 #How many test presences to use
 
 ## Load objects created from 01_Simulate_Species #####

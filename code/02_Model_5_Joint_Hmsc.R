@@ -162,16 +162,16 @@ for( r in repStart:repEnd){
                               modelType[1], "/",species[s], "/",
                               sizes[n], "/", "model_",replicates[r],
                               ".RData"))
-      if(s==4 & n ==5) {
+     
         status <- model$timeEnd
-        save(status, file=paste0(path2, "/models/",
-                              modelType[1], "/status/finished_", replicates[r], ".RData" ))
-        myfile <- paste0(path2, "/models/",
-                         modelType[1], "/status/finished_", replicates[r], ".RData" ) %>%
+        save(status, file=paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
+                              modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ))
+        myfile <- paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
+                              modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ) %>%
           drive_upload(paste0("Kelley's Model Files/status_HMSC_joint/finished_",replicates[r], ".RData" ))
 
-      }
+      
     }
   }
 }
-timeEnd <- Sys.time()-timeStart
+

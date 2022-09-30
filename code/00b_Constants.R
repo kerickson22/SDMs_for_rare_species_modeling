@@ -1,7 +1,7 @@
 #00b_Constants
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
-path2 <- path
+path2 <- "/Users/curculion/Documents/GitHub/SDMs_for_rare_species_modeling/data"
 }
 
 if(Sys.info()['sysname'] == "Windows") {

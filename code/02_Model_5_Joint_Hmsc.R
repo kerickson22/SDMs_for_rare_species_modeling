@@ -47,12 +47,12 @@ for( r in repStart:repEnd){
       X_train <- XData[sims[[s]][[n]][[r]]$train,]
       X_test <- XData[sims[[s]][[n]][[r]]$test,]
 
-	if (s==1) {
+	if (n ==1) {
   		 m <- Hmsc(Y=Y_train, XData=X_train,
                 XFormula = ~PC1 + PC2 + PC3,
                 distr="probit")
 	}
-	if(s >1) {
+	if(n >1) {
 
       m <- Hmsc(Y=Y_train, XData=X_train,
                 XFormula = ~PC1 + PC2 + PC3 + I(PC1^2)+
@@ -91,13 +91,13 @@ for( r in repStart:repEnd){
       betas <- MCMCsummary(mpost$Beta)
       model$maxRhat <- max(betas$Rhat)
       #grep("SimSp", rownames(betas))
-	if(s == 1) {
+	if(n == 1) {
 		model_curve_PC1 <- pnorm(betas$mean[250]*x1)
      		model_curve_PC2 <- pnorm(betas$mean[251]*x2)
-      	model_curve_PC3 <- pnorm(betas$mean[252]*x3)	
+      	model_curve_PC3 <- pnorm(betas$mean[252]*x3)
 	}
-	
-	if(s > 1) {
+
+	if(n > 1) {
       model_curve_PC1 <- pnorm(betas$mean[436]*x1 + betas$mean[439]*x1*x1)
       model_curve_PC2 <- pnorm(betas$mean[437]*x2 + betas$mean[440]*x2*x2)
       model_curve_PC3 <- pnorm(betas$mean[438]*x3 + betas$mean[441]*x3*x3)
@@ -134,13 +134,13 @@ for( r in repStart:repEnd){
       names(response) <- c("PC1", "PC2", "PC3")
 
       #grep("SimSp", rownames(betas))
-	if(s == 1) {
+	if(n == 1) {
 		for ( j in 1:length(response$PC1)) {
         		response$L[j] <- betas$mean[249] + betas$mean[250]*response$PC1[j] +
           		betas$mean[251]*response$PC2[j] + betas$mean[252]*response$PC3[j]      }
 
 	}
-	if(s > 1) {
+	if(n > 1) {
       	for ( j in 1:length(response$PC1)) {
         		response$L[j] <- betas$mean[435] + betas$mean[436]*response$PC1[j] +
           		betas$mean[437]*response$PC2[j] + betas$mean[438]*response$PC3[j] +

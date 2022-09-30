@@ -1,4 +1,4 @@
-# Run Hmsc joint on computer 2
+# Run Hmsc joint on computer 4
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
 }
@@ -13,7 +13,7 @@ repStart <- 76
 repEnd <- 100
 
 session <- sessionInfo()
-save(session, file=paste0(path, "/SDMs_for_rare_species_modeling/data/models/Hmsc_joint/sessionInfo_computer2.RData"))
+save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer4.RData"))
 
 
 

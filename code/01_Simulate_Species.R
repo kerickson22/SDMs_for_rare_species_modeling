@@ -5,8 +5,15 @@
 # Outputs of this script:
 # *south.csv
 
+if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
-source(paste0(path, "/SDMs_for_rare_species_modeling/code/00_Constants.R"))
+}
+
+if(Sys.info()['sysname'] == "Windows") {
+path <- "C:/Users/kerickson/Documents/GitHub"
+}
+
+source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
 ## Load data from Norberg et al.
 ## Norberg data #####

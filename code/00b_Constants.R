@@ -1,5 +1,14 @@
-#00_Constants
+#00b_Constants
+if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
+path2 <- path
+}
+
+if(Sys.info()['sysname'] == "Windows") {
+path <- "C:/Users/kerickson/Documents/GitHub"
+path2 <- "H:/Global Change Program/Research/ENMs - Modeling Methods for Rare Species (Kelley Erickson)/rare_species/data"
+}
+
 # This script contains universal constants that
 # are shared across ALL scripts
 
@@ -42,7 +51,7 @@ if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" )))
 NSites <- length(south$long)
 row.names(south) <- 1:NSites
 
-numReplicates <- 50
+numReplicates <- 100
 replicates <- paste0("rep", 1:numReplicates)
 if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/X_bar.csv" ))){
   X_bar <- read.csv(file=paste0(path, "/SDMs_for_rare_species_modeling/data/X_bar.csv" ))}
@@ -72,30 +81,30 @@ computeR2 = function(Y, predY, method="pearson"){
 #Create directories for storing models
 
 for(i in 1:length(models)){
-  if(!file.exists(paste0("../data/models/",
+  if(!file.exists(paste0(path2, "/models/",
                          models[i]))){
-    dir.create(paste0("../data/models/",
+    dir.create(paste0(path2, "/models/",
                       models[i]))
   }
-  if(!file.exists(paste0("../data/models/",
+  if(!file.exists(paste0(path2, "/models/",
                          models[i], "/status"))){
-    dir.create(paste0("../data/models/",
+    dir.create(paste0(path2,"/models/",
                       models[i], "/status"))
   }
   for(j in 1:length(species)){
-    if(!file.exists(paste0("../data/models/",
+    if(!file.exists(paste0(path2,"/models/",
                            models[i], "/",
                     species[j]))){
-      dir.create(paste0("../data/models/",
+      dir.create(paste0(path2,"/models/",
                         models[i], "/",
                  species[j]))
     }
     for(k in 1:length(sizes)){
-      if(!file.exists(paste0("../data/models/",
+      if(!file.exists(paste0(path2, "/models/",
                 models[i], "/",
                 species[j], "/",
                 sizes[k]))){
-        dir.create(path=paste0("../data/models/",
+        dir.create(path=paste0(path2, "/models/",
                                  models[i], "/",
                                  species[j], "/",
                                  sizes[k]))

@@ -168,7 +168,7 @@ for( r in repStart:repEnd){
                               modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ))
         myfile <- paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
                               modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ) %>%
-          drive_upload(paste0("Kelley's Model Files/status_HMSC_joint/finished_",replicates[r], ".RData" ))
+          drive_upload(paste0("status_updates_for_Hmsc_joint/finished_",species[s], "_", sizes[n],"_", replicates[r], ".RData"  ))
 
       
     }

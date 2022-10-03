@@ -28,6 +28,10 @@ timeStart <- Sys.time()
 for( r in repStart:repEnd){
   for (s in 1:length(species)){
     for (n in 1:length(sizes)){
+	if(!file.exists(paste0(path2, "/models/",
+                              modelType[1], "/",species[s], "/",
+                              sizes[n], "/", "model_",replicates[r],
+                              ".RData"))) {
 
       timeStart1 <- Sys.time()
       model <-list()
@@ -170,7 +174,7 @@ for( r in repStart:repEnd){
                               modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ) %>%
           drive_upload(paste0("status_updates_for_Hmsc_joint/finished_",species[s], "_", sizes[n],"_", replicates[r], ".RData"  ))
 
-      
+      }
     }
   }
 }

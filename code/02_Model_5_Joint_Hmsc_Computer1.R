@@ -17,3 +17,8 @@ save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer1.RData
 
 
 source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc.R"))
+
+if(!file.exists(paste0(path2, "/models/",
+                       modelType[1], "/results.RData" ))) {
+  source(paste0(path, "/SDMS_for_rare_species_modeling/code/03_Collate_Results.R"))
+}

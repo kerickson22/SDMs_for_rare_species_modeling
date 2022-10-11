@@ -122,3 +122,6 @@ sd_broad <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T),
                      quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)))
 
 
+#ESM formulas
+formulaMatrix <- read.csv("../data/formulaMatrix.csv",
+                          header=T)

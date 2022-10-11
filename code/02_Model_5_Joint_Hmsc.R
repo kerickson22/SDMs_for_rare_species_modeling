@@ -25,7 +25,7 @@ verbose <-1000
 
 timeStart <- Sys.time()
 
-for( r in repStart:repEnd){
+for( r in reps){
   for (s in 1:length(species)){
     for (n in 1:length(sizes)){
 	if(!file.exists(paste0(path2, "/models/",
@@ -166,7 +166,7 @@ for( r in repStart:repEnd){
                               modelType[1], "/",species[s], "/",
                               sizes[n], "/", "model_",replicates[r],
                               ".RData"))
-     
+
         status <- model$timeEnd
         save(status, file=paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
                               modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ))

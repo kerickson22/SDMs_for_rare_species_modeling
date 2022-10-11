@@ -11,8 +11,7 @@ path2 <- "H:/Global Change Program/Research/ENMs - Modeling Methods for Rare Spe
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-repStart <- 26
-repEnd <- 50
+reps <- sample(1:100)
 
 session <- sessionInfo()
 save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer2.RData"))
@@ -20,3 +19,7 @@ save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer2.RData
 
 
 source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc.R"))
+if(!file.exists(paste0(path2, "/models/",
+                       modelType[1], "/results.RData" ))) {
+  source(paste0(path, "/SDMS_for_rare_species_modeling/code/03_Collate_Results.R"))
+}

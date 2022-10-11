@@ -2,10 +2,7 @@
 
 #In this script we use a basic glm
 
-#02_Model_5_Joint_Hmsc
 
-#In this script we run Hmsc for joint species with
-# latent factors
 
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"

@@ -23,7 +23,7 @@ timeStart <- Sys.time()
 for( r in 1:length(replicates)){
   for (s in 1:length(species)){
     for (n in 1:length(sizes)){
-      if(!file.exists(paste0(path2, "/models/",
+      if(file.exists(paste0(path2, "/models/",
                              modelType[1], "/",species[s], "/",
                              sizes[n], "/", "model_",replicates[r],
                              ".RData"))) {
@@ -172,7 +172,7 @@ for( r in 1:length(replicates)){
         model$TjursR2 <- NA
         model$PC1_cor <- NA
         model$PC3_cor <- NA
-        model$P1_rankCor <- NA
+        model$PC1_rankCor <- NA
         model$PC3_rankCor <- NA
         model$varPC2Response <- NA
         model$pr_integral <- NA

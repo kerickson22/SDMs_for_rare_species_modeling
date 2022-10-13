@@ -21,7 +21,7 @@ modelType  <- models[2]
 
 timeStart <- Sys.time()
 
-for( r in 1:30){
+for( r in 1:length(replicates)){
   for (s in 1:length(species)){
     for (n in 1:length(sizes)){
 

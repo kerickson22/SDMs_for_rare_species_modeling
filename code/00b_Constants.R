@@ -28,6 +28,7 @@ library(enmSdm)
 library(arm) #for invlogit
 library(PRROC) #for AUCpr
 library(googledrive)
+library(dplyr)
 
 ## Set working directory #####
 # Set working directory to current file location

@@ -1,12 +1,12 @@
 #00b_Constants
 if(Sys.info()['sysname'] == "Darwin") {
-path <- "/Users/curculion/Documents/GitHub"
-path2 <- "/Users/curculion/Documents/GitHub/SDMs_for_rare_species_modeling/data"
+  path <- "/Users/curculion/Documents/GitHub"
+  path2 <- "/Users/curculion/Documents/GitHub/SDMs_for_rare_species_modeling/data"
 }
 
 if(Sys.info()['sysname'] == "Windows") {
-path <- "C:/Users/kerickson/Documents/GitHub"
-path2 <- "H:/Global Change Program/Research/ENMs - Modeling Methods for Rare Species (Kelley Erickson)/rare_species/data"
+  path <- "C:/Users/kerickson/Documents/GitHub"
+  path2 <- "H:/Global Change Program/Research/ENMs - Modeling Methods for Rare Species (Kelley Erickson)/rare_species/data"
 }
 
 # This script contains universal constants that
@@ -48,7 +48,7 @@ x3 <- seq(from=-11, to = 4, length.out=100)
 
 if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" ))){
   south <- read.csv(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" ),
-                  header=TRUE)}
+                    header=TRUE)}
 NSites <- length(south$long)
 row.names(south) <- 1:NSites
 
@@ -73,8 +73,8 @@ computeRMSEWeighted = function(Y, predY) {
 computeR2 = function(Y, predY, method="pearson"){
 
 
-    co = cor(Y, predY, method=method, use='pairwise')
-    R2 = sign(co)*co^2
+  co = cor(Y, predY, method=method, use='pairwise')
+  R2 = sign(co)*co^2
 
   return(R2)
 }
@@ -95,20 +95,20 @@ for(i in 1:length(models)){
   for(j in 1:length(species)){
     if(!file.exists(paste0(path2,"/models/",
                            models[i], "/",
-                    species[j]))){
+                           species[j]))){
       dir.create(paste0(path2,"/models/",
                         models[i], "/",
-                 species[j]))
+                        species[j]))
     }
     for(k in 1:length(sizes)){
       if(!file.exists(paste0(path2, "/models/",
-                models[i], "/",
-                species[j], "/",
-                sizes[k]))){
+                             models[i], "/",
+                             species[j], "/",
+                             sizes[k]))){
         dir.create(path=paste0(path2, "/models/",
-                                 models[i], "/",
-                                 species[j], "/",
-                                 sizes[k]))
+                               models[i], "/",
+                               species[j], "/",
+                               sizes[k]))
       }
     }
   }

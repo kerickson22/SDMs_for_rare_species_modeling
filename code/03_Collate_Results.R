@@ -3,7 +3,6 @@
 #In this script, we assemble all of the results
 # from the individual models into one data frame
 
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
 }
@@ -33,9 +32,9 @@ results$varPC2Response <- rep(NA, length(results$species))
 
 for (i in 1:length(results$species)) {
   if(file.exists(paste0(path2, "/models/",
-                         modelType[1], "/",results$species[i], "/",
-                         results$size[i], "/", "model_",results$rep[i],
-                         ".RData"))) {
+                        modelType[1], "/",results$species[i], "/",
+                        results$size[i], "/", "model_",results$rep[i],
+                        ".RData"))) {
     load(paste0(path2, "/models/",
                 modelType[1], "/",results$species[i], "/",
                 results$size[i], "/", "model_",results$rep[i],
@@ -54,9 +53,9 @@ for (i in 1:length(results$species)) {
 
 save(results, file=paste0(path2, "/models/",
                           modelType[1], "/results.RData" ))
-     myfile <- paste0(path2, "/models/",
-                      modelType[1], "/results.RData" ) %>%
-       drive_upload(paste0("status_updates_for_Hmsc_joint/Hmsc_joint_results.RData"))
+myfile <- paste0(path2, "/models/",
+                 modelType[1], "/results.RData" ) %>%
+  drive_upload(paste0("status_updates_for_Hmsc_joint/Hmsc_joint_results.RData"))
 
 # Single-species glm #####
 
@@ -305,7 +304,7 @@ full$size <- full$size %>% recode("size4" = "4", "size8"="8", "size16"="16", "si
                                   "size64"="64") %>%
   factor(levels=c("4", "8", "16", "32","64"))
 converged$size <- converged$size %>% recode("size4" = "4", "size8"="8", "size16"="16", "size32"="32",
-                                  "size64"="64") %>%
+                                            "size64"="64") %>%
   factor(levels=c("4", "8", "16", "32","64"))
 
 full$species <- factor(full$species)

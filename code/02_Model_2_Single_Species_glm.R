@@ -2,8 +2,6 @@
 
 #In this script we use a basic glm
 
-
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
   path2 <- "/Users/curculion/Documents/GitHub"
@@ -66,7 +64,7 @@ for( r in 1:length(replicates)){
                                presWeight = presWeights,
                                contrastWeight = contrastWeights)
 
-       model$RMSEWeighted <- computeRMSEWeighted(Y_test, model$preds)
+      model$RMSEWeighted <- computeRMSEWeighted(Y_test, model$preds)
       model$TjursR2 <- computeR2(Y_test, model$preds)
       #preds2 <- computePredictedValues(m) #fits to training data
       #preds.mean <- apply(model$preds, FUN='mean', margin='1')
@@ -125,7 +123,7 @@ for( r in 1:length(replicates)){
       if(n > 1) {
         for ( j in 1:length(response$PC1)) {
           response$L[j] <- m$coefficients[1] + m$coefficients[2]*response$PC1[j] +
-           m$coefficients[3]*response$PC2[j] + m$coefficients[4]*response$PC3[j] +
+            m$coefficients[3]*response$PC2[j] + m$coefficients[4]*response$PC3[j] +
             m$coefficients[5]*response$PC1[j]*response$PC1[j] +
             m$coefficients[6]*response$PC2[j]*response$PC2[j] +
             m$coefficients[7]*response$PC3[j]*response$PC3[j]
@@ -149,4 +147,3 @@ for( r in 1:length(replicates)){
   }
 }
 timeEnd <- Sys.time()-timeStart
-

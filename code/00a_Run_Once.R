@@ -1,8 +1,6 @@
 #00a_Run_Once
 
 # This script should be run at the start of the project, and only run once.
-
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
 }

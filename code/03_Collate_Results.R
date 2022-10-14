@@ -3,7 +3,6 @@
 #In this script, we assemble all of the results
 # from the individual models into one data frame
 
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
 }

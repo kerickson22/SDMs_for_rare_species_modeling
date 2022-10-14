@@ -3,6 +3,7 @@
 #In this script we run Hmsc for joint species with
 # latent factors
 
+
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
 }

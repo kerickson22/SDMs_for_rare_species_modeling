@@ -4,7 +4,6 @@
 # models, as was originally done in the Breiner et al.
 # manuscript
 
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
   path2 <- "/Users/curculion/Documents/GitHub"

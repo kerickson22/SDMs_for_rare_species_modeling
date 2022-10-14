@@ -3,9 +3,6 @@
 #In this script we allow the submodels to
 # have more complicated terms than simply bivariate
 
-
-
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
   path2 <- "/Users/curculion/Documents/GitHub"

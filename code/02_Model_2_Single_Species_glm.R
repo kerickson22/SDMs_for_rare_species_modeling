@@ -2,8 +2,6 @@
 
 #In this script we use a basic glm
 
-
-
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
   path2 <- "/Users/curculion/Documents/GitHub"

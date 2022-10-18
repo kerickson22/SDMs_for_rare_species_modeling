@@ -35,7 +35,7 @@ library(dplyr)
 setwd(paste0(path, "/SDMS_for_rare_species_modeling/code"))       # Set working directory to source file location
 
 # Define constants #####
-numPresences <- c(4, 8, 16, 32, 64)
+numPresences <- c(2, 4, 8, 16, 32, 64)
 sizes <- paste0("size", numPresences)# Desired sample size
 numTestPresences <- 64 #How many test presences to use
 species <- c("broad_avg", "broad_ext", "narrow_avg", "narrow_ext")

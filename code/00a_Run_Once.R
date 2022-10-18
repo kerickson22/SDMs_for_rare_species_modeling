@@ -149,6 +149,8 @@ betas <- MCMCsummary(mpost$Beta)
 max(betas$Rhat) #1.09
 MCMCplot(mpost$Beta, ref_ovl=TRUE)
 
+MCMCplot(mpost$Gamma, ref_ovl = TRUE)
+MCMCplot(mpost$Sigma, ref_ovl = TRUE)
 #influence of traits on niches
 #pg 110
 # 7 of these

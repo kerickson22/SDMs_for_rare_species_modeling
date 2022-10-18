@@ -1,4 +1,4 @@
-#02_Model_5_Joint_Hmsc
+#02_Model_5_Joint_Hmsc_Size 2
 
 #In this script we run Hmsc for joint species with
 # latent factors
@@ -12,6 +12,8 @@ if(Sys.info()['sysname'] == "Windows") {
   path <- "C:/Users/kerickson/Documents/GitHub"
   path2 <- "H:/Global Change Program/Research/ENMs - Modeling Methods for Rare Species (Kelley Erickson)/rare_species/data"
 }
+
+load(paste0("../data/sims_2_data.RData"))
 
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
@@ -28,15 +30,15 @@ timeStart <- Sys.time()
 
 for( r in reps){
   for (s in 1:length(species)){
-    for (n in 1:2){
+
       if(!file.exists(paste0(path2, "/models/",
                              modelType[1], "/",species[s], "/",
-                             sizes[n], "/", "model_",replicates[r],
+                             "size2", "/", "model_",replicates[r],
                              ".RData"))) {
 
         timeStart1 <- Sys.time()
         model <-list()
-        model$NPresesences <- sizes[n]
+        model$NPresesences <- "size2"
         model$species <- species[s]
         model$replicate <- replicates[r]
         model$nChains <- nChains
@@ -44,21 +46,19 @@ for( r in reps){
         model$transient <- transient
         model$thin <-thin
         model$modelType <- modelType[1]
-        Y <- cbind(south[,6:67],as.matrix(sims[[s]][[n]][[r]]$YSim))
+        Y <- cbind(south[,6:67],as.matrix(sims_2[[s]][[r]]$YSim))
         XData <- south[,3:5]
 
-        Y_train <- Y[sims[[s]][[n]][[r]]$train,]
-        Y_test <- Y[sims[[s]][[n]][[r]]$test,]
-        X_train <- XData[sims[[s]][[n]][[r]]$train,]
-        X_test <- XData[sims[[s]][[n]][[r]]$test,]
+        Y_train <- Y[sims_2[[s]][[r]]$train,]
+        Y_test <- Y[sims_2[[s]][[r]]$test,]
+        X_train <- XData[sims_2[[s]][[r]]$train,]
+        X_test <- XData[sims_2[[s]][[r]]$test,]
 
-
-        if(n >1)
 
           m <- Hmsc(Y=Y_train, XData=X_train,
-                    XFormula = ~PC1 + PC2 + PC3 + I(PC1^2)+
-                      I(PC2^2)+I(PC3^2),
+                    XFormula = ~PC1 + PC2 + PC3,
                     distr="probit")
+
 
 
         m <- sampleMcmc(m, thin=thin, samples=samples,
@@ -90,17 +90,14 @@ for( r in reps){
         #preds.mean <- apply(model$preds, FUN='mean', margin='1')
         mpost <- convertToCodaObject(m)
         betas <- MCMCsummary(mpost$Beta)
-        model$gammas <- mpost$Gamma
-        model$V <- mpost$V
-        model$Sigma <- mpost$Sigma
         model$maxRhat <- max(betas$Rhat)
         #grep("SimSp", rownames(betas))
 
+          model_curve_PC1 <- pnorm(betas$mean[250]*x1)
+          model_curve_PC2 <- pnorm(betas$mean[251]*x2)
+          model_curve_PC3 <- pnorm(betas$mean[252]*x3)
 
 
-          model_curve_PC1 <- pnorm(betas$mean[436]*x1 + betas$mean[439]*x1*x1)
-          model_curve_PC2 <- pnorm(betas$mean[437]*x2 + betas$mean[440]*x2*x2)
-          model_curve_PC3 <- pnorm(betas$mean[438]*x3 + betas$mean[441]*x3*x3)
 
 
         real_curve_PC1 <- dnorm(x1, mean=sims[[s]]$mu[1],
@@ -135,14 +132,11 @@ for( r in reps){
 
         #grep("SimSp", rownames(betas))
 
-
           for ( j in 1:length(response$PC1)) {
-            response$L[j] <- betas$mean[435] + betas$mean[436]*response$PC1[j] +
-              betas$mean[437]*response$PC2[j] + betas$mean[438]*response$PC3[j] +
-              betas$mean[439]*response$PC1[j]*response$PC1[j] +
-              betas$mean[440]*response$PC2[j]*response$PC2[j] +
-              betas$mean[441]*response$PC3[j]*response$PC3[j]
-          }
+            response$L[j] <- betas$mean[249] + betas$mean[250]*response$PC1[j] +
+              betas$mean[251]*response$PC2[j] + betas$mean[252]*response$PC3[j]      }
+
+
 
 
         model$varPC2Response<- sd(invlogit(response$L))
@@ -155,7 +149,7 @@ for( r in reps){
         model$timeEnd <- Sys.time() - timeStart1
         save(model, file=paste0(path2, "/models/",
                                 modelType[1], "/",species[s], "/",
-                                sizes[n], "/", "model_",replicates[r],
+                                "size2", "/", "model_",replicates[r],
                                 ".RData"))
 
         status <- model$timeEnd

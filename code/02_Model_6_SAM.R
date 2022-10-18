@@ -24,7 +24,7 @@ timeStart <- Sys.time()
 for( r in 1:length(replicates)){
   for (s in 1:length(species)){
     for (n in 1:length(sizes)){
-      if(file.exists(paste0(path2, "/models/",
+      if(!file.exists(paste0(path2, "/models/",
                             modelType[1], "/",species[s], "/",
                             sizes[n], "/", "model_",replicates[r],
                             ".RData"))) {
@@ -116,6 +116,7 @@ for( r in 1:length(replicates)){
           m$beta[35]*m$tau["SimSp", 5] +
           m$beta[36]*m$tau["SimSp", 6]
 
+        model$tau <- m$tau["SimSp",]
         model_curve_PC1 <- pnorm(b1*x1 + b4*x1*x1)
         model_curve_PC2 <- pnorm(b2*x2 + b5*x2*x2)
         model_curve_PC3 <- pnorm(b3*x3 + b6*x3*x3)
@@ -177,6 +178,7 @@ for( r in 1:length(replicates)){
           model$PC3_rankCor <- NA
           model$varPC2Response <- NA
           model$pr_integral <- NA
+          model$tau <- NA
         }
 
 

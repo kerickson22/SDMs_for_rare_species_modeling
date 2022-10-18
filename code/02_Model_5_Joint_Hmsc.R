@@ -53,7 +53,7 @@ for( r in reps){
         X_test <- XData[sims[[s]][[n]][[r]]$test,]
 
 
-        if(n >1)
+
 
           m <- Hmsc(Y=Y_train, XData=X_train,
                     XFormula = ~PC1 + PC2 + PC3 + I(PC1^2)+
@@ -169,3 +169,4 @@ for( r in reps){
     }
   }
 }
+

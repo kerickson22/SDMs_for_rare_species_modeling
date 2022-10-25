@@ -3,7 +3,7 @@
 # Script for simulating virtual species.
 
 # Outputs of this script:
-# *south.csv
+# *sims_data.RData
 
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
@@ -17,93 +17,6 @@ source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
 
 ## Virtual Species Niches #####
-
-
-mu_avg <- c(mu_PC1, mu_PC3)
-sd_broad <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T),
-                        quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)))
-
-#Now, to decide on the parameters associated
-# with narrow niche and extreme niche position.
-# To do this, we will explore a range of possible
-# choices, and pick the one such that the 128th pick
-# of presences still has relatively high probability
-
-
-tries_PC1 <- c(seq(from=-9, to=-2.5, by=0.5), seq(from=-2, to=1, by=0.5))
-tries_PC3 <- c(seq(from=-10, to=-1, by=0.5), seq(from=1, to=3, by=0.5))
-tries_sd_quantile_PC1 <- seq(from=0.1, to = 0.8, by=0.1)
-tries_sd_quantile_PC3 <- seq(from=0.1, to = 0.8, by=0.1)
-
-tries <- expand.grid(tries_PC1,
-                     tries_PC3,
-                     tries_sd_quantile_PC1,
-                     tries_sd_quantile_PC3)
-names(tries) <- c(
-  "mu_PC1", "mu_PC3",
-  "sd_quantile_PC1",
-  "sd_quantile_PC3"
-)
-
-tries$dist_mu_PC1 <- abs(mu_PC1-tries$mu_PC1)
-tries$dist_mu_PC3 <- abs(mu_PC3-tries$mu_PC3)
-
-df_tries <- data.frame(
-  mu_PC1 = tries$mu_PC1,
-  dist_mu_PC1 = tries$dist_mu_PC1,
-  mu_PC3 = tries$mu_PC3,
-  dist_mu_PC3 = tries$dist_mu_PC3,
-  sd_quantile_PC1 = tries$sd_quantile_PC1,
-  sd_quantile_PC3 = tries$sd_quantile_PC3,
-  p_128_narrow_avg = rep(NA, length(tries$mu_PC1)),
-  p_128_broad_ext = rep(NA, length(tries$mu_PC1)),
-  p_128_narrow_ext = rep(NA, length(tries$mu_PC1)))
-
-for (i in 1:length(df_tries$mu_PC1)) {
-  mu_ext <- c(df_tries$mu_PC1[i], df_tries$mu_PC3[i])
-  sd_narrow <- diag(x=c(quantile(X_bar$sd_PC1, probs=df_tries$sd_quantile_PC1[i], na.rm=T),
-                        quantile(X_bar$sd_PC3, probs=df_tries$sd_quantile_PC3[i], na.rm=T)))
-
-  L_narrow_avg <- dnorm(south$PC1, mean=mu_avg[1], sd=sd_narrow[1,1])*
-      dnorm(south$PC3, mean=mu_avg[2], sd=sd_narrow[2,2])
-  L_narrow_avg <- L_narrow_avg/sum(L_narrow_avg)
-  L_narrow_avg <- sort(L_narrow_avg, decreasing=T)
-
-  L_narrow_ext <- dnorm(south$PC1, mean=mu_ext[1], sd=sd_narrow[1,1])*
-    dnorm(south$PC3, mean=mu_ext[2], sd=sd_narrow[2,2])
-  L_narrow_ext <- L_narrow_ext/sum(L_narrow_ext)
-  L_narrow_ext <- sort(L_narrow_ext, decreasing=T)
-
-  L_broad_ext <- dnorm(south$PC1, mean=mu_ext[1], sd=sd_broad[1,1])*
-    dnorm(south$PC3, mean=mu_ext[2], sd=sd_broad[2,2])
-  L_broad_ext <- L_broad_ext/sum(L_broad_ext)
-  L_broad_ext <- sort(L_broad_ext, decreasing=T)
-
-  df_tries$p_128_narrow_avg[i] <- L_narrow_avg[128]/max(L_narrow_avg)
-  df_tries$p_128_narrow_ext[i] <- L_narrow_ext[128]/max(L_narrow_ext)
-  df_tries$p_128_broad_ext[i] <-L_broad_ext[128]/max(L_broad_ext)
-
-  if (i %% 3000 == 0) { cat(paste0(i, " of ", length(df_tries$mu_PC1), "\n"))
-  }
-}
-
-df_tries2 <- subset(df_tries, df_tries$p_128_narrow_avg > 0.6 &
-                      df_tries$p_128_broad_ext > 0.6 & df_tries$p_128_narrow_ext>0.6)
-
-df_tries2 <- df_tries2[order(df_tries2$sd_quantile_PC1, df_tries2$sd_quantile_PC3, -df_tries2$dist_mu_PC1, -df_tries2$dist_mu_PC3),]
-
-head(df_tries2)
-df_tries3 <- subset(df_tries2, df_tries2$mu_PC1 == -3.5 &
-                    df_tries2$mu_PC3 == 2)
-df_tries4 <- subset(df_tries3,
-                    df_tries3$sd_quantile_PC1==0.4)
-#sd_narrow <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.1, na.rm=T),
-                     # quantile(X_bar$sd_PC3, probs=0.8, na.rm=T)))
-sd_narrow <- diag(c(0.9, 2.5))
-mu_ext <- c(-3.5, 2)
-sd_broad <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T),
-                                 quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)))
-#Discussion point: choose different values of sd?
 
 set.seed(12)
 #?To set seed or not?

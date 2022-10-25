@@ -51,7 +51,37 @@ for( r in 1:100){
       presWeights <- rep(1/64, 64)
       contrastWeights <- rep(1/64, 64)
 
-      if (n==1) {
+       if (n==1) {
+        weight_vec <- NULL
+        pred_sum <-rep(0, 0.5*length(Y_test))
+        B0_sum <- rep(0, 0.5*length(Y_test))
+        B1_sum <- rep(0, 0.5*length(Y_test))
+        B2_sum <- rep(0, 0.5*length(Y_test))
+        B3_sum <- rep(0, 0.5*length(Y_test))
+        for (f in 1:3) {
+          mod1 <- glm(as.formula(formulaMatrix$formula[f]),
+                      family=binomial, data=train)
+          pred <- predict(mod1, X_test,
+                          type="response")
+
+
+          auc_submod <- aucWeighted(pres=pred[1:64],
+                                    contrast=pred[65:128],
+                                    presWeight = presWeights,
+                                    contrastWeight = contrastWeights)
+          weight <- 2*auc_submod -1 #Schoners' D
+          if(weight < 0) {weight <- 0}
+          weight_vec <- c(weight_vec, weight)
+          pred_sum <- pred_sum + (pred * weight)
+          if(!is.na(formulaMatrix$Int[f]))   {B0_sum <- sum(B0_sum, weight*coefficients(mod1)[formulaMatrix$Int[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC1[f]))   {B1_sum <- sum(B1_sum, weight*coefficients(mod1)[formulaMatrix$PC1[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC2[f]))   {B2_sum <- sum(B2_sum, weight*coefficients(mod1)[formulaMatrix$PC2[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC3[f]))   {B3_sum <- sum(B3_sum, weight*coefficients(mod1)[formulaMatrix$PC3[f]], na.rm=T)}
+
+
+        }
+      }
+      if (n==2) {
         weight_vec <- NULL
         pred_sum <-rep(0, 0.5*length(Y_test))
         B0_sum <- rep(0, 0.5*length(Y_test))
@@ -81,7 +111,7 @@ for( r in 1:100){
 
         }
       }
-      if (n>1) {
+      if (n>2) {
         weight_vec <- NULL
         pred_sum <-rep(0, 0.5*length(Y_test))
         B0_sum <- rep(0, 0.5*length(Y_test))
@@ -155,7 +185,7 @@ for( r in 1:100){
         B1_esm <- B1_sum/sum(weight_vec)
         B2_esm <- B2_sum/sum(weight_vec)
         B3_esm <- B3_sum/sum(weight_vec)
-        if(n >1) {
+        if(n >2) {
           B4_esm <- B4_sum/sum(weight_vec)
           B5_esm <- B5_sum/sum(weight_vec)
           B6_esm <- B6_sum/sum(weight_vec)}
@@ -182,12 +212,13 @@ for( r in 1:100){
                                 sd=sims[[s]]$sd[1,1])
         real_curve_PC3 <- dnorm(x3, mean=sims[[s]]$mu[2],
                                 sd=sims[[s]]$sd[2,2])
-        if(n ==1) {
+
+        if(n <= 2) {
           model_curve_PC1_ESM <- pnorm(B1_esm*x1)
           model_curve_PC2_ESM <- pnorm(B2_esm*x2)
           model_curve_PC3_ESM <- pnorm(B3_esm*x3)
         }
-        if(n > 1){
+        if(n > 2){
           model_curve_PC1_ESM <- pnorm(B1_esm*x1 + B4_esm*x1*x1)
           model_curve_PC2_ESM <- pnorm(B2_esm*x2 + B5_esm*x2*x2)
           model_curve_PC3_ESM <- pnorm(B3_esm*x3 + B6_esm*x3*x3)
@@ -215,13 +246,14 @@ for( r in 1:100){
         names(response) <- c("PC1", "PC2", "PC3")
 
         #grep("SimSp", rownames(betas))
-        if(n == 1) {
+
+        if(n <= 2) {
           for ( j in 1:length(response$PC1)) {
             response$L[j] <- B0_esm + B1_esm*response$PC1[j] +
               B2_esm*response$PC2[j] + B3_esm*response$PC3[j]      }
 
         }
-        if(n > 1) {
+        if(n > 2) {
           for ( j in 1:length(response$PC1)) {
             response$L[j] <- B0_esm + B1_esm*response$PC1[j] +
               B2_esm*response$PC2[j] + B3_esm*response$PC3[j] +

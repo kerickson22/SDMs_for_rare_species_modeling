@@ -26,7 +26,6 @@ for(i in 1:length(formulaMatrix$X)) {
 }
 names(weights_df)[4:29] <- paste0("m", 1:26)
 
-
 timeStart <- Sys.time()
 
 for( r in 1:100){
@@ -52,36 +51,66 @@ for( r in 1:100){
       presWeights <- rep(1/64, 64)
       contrastWeights <- rep(1/64, 64)
 
-
-      weight_vec <- NULL
-      pred_sum <-rep(0, 0.5*length(Y_test))
-      B0_sum <- rep(0, 0.5*length(Y_test))
-      B1_sum <- rep(0, 0.5*length(Y_test))
-      B2_sum <- rep(0, 0.5*length(Y_test))
-      B3_sum <- rep(0, 0.5*length(Y_test))
-      for (f in 1:6) {
-        mod1 <- glm(as.formula(formulaMatrix$formula[f]),
-                    family=binomial, data=train)
-        pred <- predict(mod1, X_test,
-                        type="response")
-
-
-        auc_submod <- aucWeighted(pres=pred[1:64],
-                                  contrast=pred[65:128],
-                                  presWeight = presWeights,
-                                  contrastWeight = contrastWeights)
-        weight <- 2*auc_submod -1 #Schoners' D
-        if(weight < 0) {weight <- 0}
-        weight_vec <- c(weight_vec, weight)
-        pred_sum <- pred_sum + (pred * weight)
-        if(!is.na(formulaMatrix$Int[f]))   {B0_sum <- sum(B0_sum, weight*coefficients(mod1)[formulaMatrix$Int[f]], na.rm=T)}
-        if(!is.na(formulaMatrix$PC1[f]))   {B1_sum <- sum(B1_sum, weight*coefficients(mod1)[formulaMatrix$PC1[f]], na.rm=T)}
-        if(!is.na(formulaMatrix$PC2[f]))   {B2_sum <- sum(B2_sum, weight*coefficients(mod1)[formulaMatrix$PC2[f]], na.rm=T)}
-        if(!is.na(formulaMatrix$PC3[f]))   {B3_sum <- sum(B3_sum, weight*coefficients(mod1)[formulaMatrix$PC3[f]], na.rm=T)}
+      if (n==1) {
+        weight_vec <- NULL
+        pred_sum <-rep(0, 0.5*length(Y_test))
+        B0_sum <- rep(0, 0.5*length(Y_test))
+        B1_sum <- rep(0, 0.5*length(Y_test))
+        B2_sum <- rep(0, 0.5*length(Y_test))
+        B3_sum <- rep(0, 0.5*length(Y_test))
+        for (f in 1:3) {
+          mod1 <- glm(as.formula(formulaMatrix$formula[f]),
+                      family=binomial, data=train)
+          pred <- predict(mod1, X_test,
+                          type="response")
 
 
+          auc_submod <- aucWeighted(pres=pred[1:64],
+                                    contrast=pred[65:128],
+                                    presWeight = presWeights,
+                                    contrastWeight = contrastWeights)
+          weight <- 2*auc_submod -1 #Schoners' D
+          if(weight < 0) {weight <- 0}
+          weight_vec <- c(weight_vec, weight)
+          pred_sum <- pred_sum + (pred * weight)
+          if(!is.na(formulaMatrix$Int[f]))   {B0_sum <- sum(B0_sum, weight*coefficients(mod1)[formulaMatrix$Int[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC1[f]))   {B1_sum <- sum(B1_sum, weight*coefficients(mod1)[formulaMatrix$PC1[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC2[f]))   {B2_sum <- sum(B2_sum, weight*coefficients(mod1)[formulaMatrix$PC2[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC3[f]))   {B3_sum <- sum(B3_sum, weight*coefficients(mod1)[formulaMatrix$PC3[f]], na.rm=T)}
+
+
+        }
       }
+      if (n>1) {
+        weight_vec <- NULL
+        pred_sum <-rep(0, 0.5*length(Y_test))
+        B0_sum <- rep(0, 0.5*length(Y_test))
+        B1_sum <- rep(0, 0.5*length(Y_test))
+        B2_sum <- rep(0, 0.5*length(Y_test))
+        B3_sum <- rep(0, 0.5*length(Y_test))
+        for (f in 1:6) {
+          mod1 <- glm(as.formula(formulaMatrix$formula[f]),
+                      family=binomial, data=train)
+          pred <- predict(mod1, X_test,
+                          type="response")
 
+
+          auc_submod <- aucWeighted(pres=pred[1:64],
+                                    contrast=pred[65:128],
+                                    presWeight = presWeights,
+                                    contrastWeight = contrastWeights)
+          weight <- 2*auc_submod -1 #Schoners' D
+          if(weight < 0) {weight <- 0}
+          weight_vec <- c(weight_vec, weight)
+          pred_sum <- pred_sum + (pred * weight)
+          if(!is.na(formulaMatrix$Int[f]))   {B0_sum <- sum(B0_sum, weight*coefficients(mod1)[formulaMatrix$Int[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC1[f]))   {B1_sum <- sum(B1_sum, weight*coefficients(mod1)[formulaMatrix$PC1[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC2[f]))   {B2_sum <- sum(B2_sum, weight*coefficients(mod1)[formulaMatrix$PC2[f]], na.rm=T)}
+          if(!is.na(formulaMatrix$PC3[f]))   {B3_sum <- sum(B3_sum, weight*coefficients(mod1)[formulaMatrix$PC3[f]], na.rm=T)}
+
+
+        }
+      }
 
 
       if(sum(weight_vec) == 0){
@@ -124,7 +153,6 @@ for( r in 1:100){
         B3_esm <- B3_sum/sum(weight_vec)
 
 
-
         #evaluate ESM
         model$auc <- aucWeighted(pres=pred_esm[Y_test==1],
                                  contrast=pred_esm[Y_test==0],
@@ -147,9 +175,10 @@ for( r in 1:100){
         real_curve_PC3 <- dnorm(x3, mean=sims[[s]]$mu[2],
                                 sd=sims[[s]]$sd[2,2])
 
-        model_curve_PC1_ESM <- pnorm(B1_esm*x1)
-        model_curve_PC2_ESM <- pnorm(B2_esm*x2)
-        model_curve_PC3_ESM <- pnorm(B3_esm*x3)
+
+          model_curve_PC1_ESM <- pnorm(B1_esm*x1)
+          model_curve_PC2_ESM <- pnorm(B2_esm*x2)
+          model_curve_PC3_ESM <- pnorm(B3_esm*x3)
 
 
 
@@ -158,12 +187,12 @@ for( r in 1:100){
         if(sd(model_curve_PC1_ESM)>0) {
           model$PC1_rankCor <- compareResponse(model_curve_PC1_ESM,
                                                real_curve_PC1,data =data.frame(x1),graph=F)$rankCor
-        } else{model$PC1_rankCor <- 0}
+        } else{model$PC1_rankCor <- NA}
 
         if(sd(model_curve_PC3_ESM)>0) {
           model$PC3_rankCor <- compareResponse(model_curve_PC3_ESM,
                                                real_curve_PC3, data =data.frame(x3), graph=F)$rankCor
-        } else{model$PC3_rankCor <- 0}
+        } else{model$PC3_rankCor <- NA}
         #Calculate PC2 response
         x1_PC2_response <- mu_avg[1]
         x2_PC2_response <- south$PC2
@@ -176,9 +205,10 @@ for( r in 1:100){
 
         #grep("SimSp", rownames(betas))
 
-        for ( j in 1:length(response$PC1)) {
-          response$L[j] <- B0_esm + B1_esm*response$PC1[j] +
-            B2_esm*response$PC2[j] + B3_esm*response$PC3[j]      }
+
+          for ( j in 1:length(response$PC1)) {
+            response$L[j] <- B0_esm + B1_esm*response$PC1[j] +
+              B2_esm*response$PC2[j] + B3_esm*response$PC3[j]      }
 
 
 

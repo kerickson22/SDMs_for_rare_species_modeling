@@ -21,7 +21,7 @@ timeStart <- Sys.time()
 
 for( r in 1:length(replicates)){
   for (s in 1:length(species)){
-    for (n in 1:length(sizes)){
+    for (n in 2:length(sizes)){
 
       timeStart1 <- Sys.time()
       model <-list()
@@ -38,12 +38,13 @@ for( r in 1:length(replicates)){
       X_train <- XData[sims[[s]][[n]][[r]]$train,]
       X_test <- XData[sims[[s]][[n]][[r]]$test,]
       train <- cbind(Y_train, X_train)
-      if (n==1) {
+
+      if (n==2) {
         m <- glm(Y_train ~ PC1 + PC2 + PC3,
                  data = train, family=binomial())
 
       }
-      if(n >1) {
+      if(n >2) {
         m <- glm(Y_train ~ PC1 + PC2 + PC3 +
                    I(PC1^2) + I(PC2^2) + I(PC3^2),
                  data=train, family=binomial())
@@ -71,13 +72,13 @@ for( r in 1:length(replicates)){
 
 
 
-      if(n == 1) {
+      if(n == 2) {
         model_curve_PC1 <- pnorm(m$coefficients[2]*x1)
         model_curve_PC2 <- pnorm(m$coefficients[3]*x2)
         model_curve_PC3 <- pnorm(m$coefficients[4]*x3)
       }
 
-      if(n > 1) {
+      if(n > 2) {
         model_curve_PC1 <- pnorm(m$coefficients[2]*x1 + m$coefficients[5]*x1*x1)
         model_curve_PC2 <- pnorm(m$coefficients[3]*x2 + m$coefficients[6]*x2*x2)
         model_curve_PC3 <- pnorm(m$coefficients[4]*x3 + m$coefficients[7]*x3*x3)
@@ -114,13 +115,13 @@ for( r in 1:length(replicates)){
       names(response) <- c("PC1", "PC2", "PC3")
 
       #grep("SimSp", rownames(betas))
-      if(n == 1) {
+      if(n == 2) {
         for ( j in 1:length(response$PC1)) {
           response$L[j] <- m$coefficients[1] + m$coefficients[2]*response$PC1[j] +
             m$coefficients[3]*response$PC2[j] + m$coefficients[4]*response$PC3[j]      }
 
       }
-      if(n > 1) {
+      if(n > 2) {
         for ( j in 1:length(response$PC1)) {
           response$L[j] <- m$coefficients[1] + m$coefficients[2]*response$PC1[j] +
             m$coefficients[3]*response$PC2[j] + m$coefficients[4]*response$PC3[j] +

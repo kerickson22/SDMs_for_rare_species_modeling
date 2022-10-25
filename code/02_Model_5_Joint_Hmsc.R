@@ -16,7 +16,7 @@ if(Sys.info()['sysname'] == "Windows") {
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-modelType  <- models[5]
+modelType  <- models[4]
 nChains <- 2
 thin <- 1
 samples <- 20000
@@ -28,7 +28,7 @@ timeStart <- Sys.time()
 
 for( r in reps){
   for (s in 1:length(species)){
-    for (n in 1:2){
+    for (n in 1:length(sizes)){
       if(!file.exists(paste0(path2, "/models/",
                              modelType[1], "/",species[s], "/",
                              sizes[n], "/", "model_",replicates[r],
@@ -64,16 +64,19 @@ for( r in reps){
         m <- sampleMcmc(m, thin=thin, samples=samples,
                         transient=transient,
                         nChains=nChains, verbose=verbose)
-        model$preds <- predict(m,XData=X_test, expected=F) #expected=T, probs, expected =F, 0,1
+        preds <- predict(m,XData=X_test, expected=F) #expected=T, probs, expected =F, 0,1
+        preds_array <- abind(preds, along=3)
 
-        thing <- lapply(
-          X = model$preds,
-          FUN = function(x){x[,63]}
-        )
-        Matrix_x <- matrix(unlist(thing), ncol = nChains*samples, byrow = TRUE)
-        rm(thing)
+        preds_sp <- preds_array[,"SimSp",]
+        preds.mean <- model$preds1_mean <- apply(preds_sp, 1, "mean")
+        # thing <- lapply(
+        #   X = preds,
+        #   FUN = function(x){x[,63]}
+        # )
+        # Matrix_x <- matrix(unlist(thing), ncol = nChains*samples, byrow = TRUE)
+        # rm(thing)
 
-        preds.mean <- apply(Matrix_x, FUN="mean", MARGIN=1)
+        #preds.mean <- apply(Matrix_x, FUN="mean", MARGIN=1)
 
         presWeights <- rep(1/64, 64)
         contrastWeights <- rep(1/64, 64)
@@ -84,15 +87,15 @@ for( r in reps){
                                  presWeight = presWeights,
                                  contrastWeight = contrastWeights)
         model$RMSEWeighted <- computeRMSEWeighted(Y_test["SimSp"], preds.mean)
-        model$TjursR2 <- computeR2(Y_test["SimSp"
+        model$TjursR2 <- computeTjurR2(Y_test["SimSp"
         ], preds.mean)
         #preds2 <- computePredictedValues(m) #fits to training data
         #preds.mean <- apply(model$preds, FUN='mean', margin='1')
         mpost <- convertToCodaObject(m)
         betas <- MCMCsummary(mpost$Beta)
-        model$gammas <- mpost$Gamma
-        model$V <- mpost$V
-        model$Sigma <- mpost$Sigma
+        #model$gammas <- mpost$Gamma
+        #model$V <- mpost$V
+        #model$Sigma <- mpost$Sigma
         model$maxRhat <- max(betas$Rhat)
         #grep("SimSp", rownames(betas))
 
@@ -158,12 +161,12 @@ for( r in reps){
                                 sizes[n], "/", "model_",replicates[r],
                                 ".RData"))
 
-        status <- model$timeEnd
-        save(status, file=paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
-                                 modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ))
-        myfile <- paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
-                         modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ) %>%
-          drive_upload(paste0("status_updates_for_Hmsc_joint/finished_",species[s], "_", sizes[n],"_", replicates[r], ".RData"  ))
+         status <- model$timeEnd
+         save(status, file=paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
+                                  modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ))
+         myfile <- paste0(path, "/SDMs_for_rare_species_modeling/data/models/",
+                          modelType[1], "/status/finished_", species[s], "_", sizes[n],"_", replicates[r], ".RData" ) %>%
+           drive_upload(paste0("status_updates_for_Hmsc_joint/finished_",species[s], "_", sizes[n],"_", replicates[r], ".RData"  ))
 
       }
     }

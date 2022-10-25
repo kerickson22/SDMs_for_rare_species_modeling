@@ -29,6 +29,8 @@ library(arm) #for invlogit
 library(PRROC) #for AUCpr
 library(googledrive)
 library(dplyr)
+library(ggpubr)
+library(abind)
 
 ## Set working directory #####
 # Set working directory to current file location
@@ -39,29 +41,34 @@ numPresences <- c(2, 4, 8, 16, 32, 64)
 sizes <- paste0("size", numPresences)# Desired sample size
 numTestPresences <- 64 #How many test presences to use
 species <- c("broad_avg", "broad_ext", "narrow_avg", "narrow_ext")
-models <- c("Hmsc_single", "glm", "ESM_simple", "ESM_complex", "Hmsc_joint","SAM")
+models <- c("glm", "ESM_simple", "ESM_complex", "Hmsc_joint","SAM")
+numReplicates <- 100
+replicates <- paste0("rep", 1:numReplicates)
+
 x1 <- seq(from=-9, to = 13, length.out=100)
 x2 <- seq(from=-9, to = 16, length.out=100)
 x3 <- seq(from=-11, to = 4, length.out=100)
 
-## Load objects created from 01_Simulate_Species #####
-
+#Load real species data (object created in 00a_Run_Once.R)
 if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" ))){
   south <- read.csv(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" ),
                     header=TRUE)}
-NSites <- length(south$long)
-row.names(south) <- 1:NSites
-
-numReplicates <- 100
-replicates <- paste0("rep", 1:numReplicates)
 if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/X_bar.csv" ))){
   X_bar <- read.csv(file=paste0(path, "/SDMs_for_rare_species_modeling/data/X_bar.csv" ))}
 
+NSites <- length(south$long)
+row.names(south) <- 1:NSites
+
+
+
+## Load objects created from 01_Simulate_Species #####
+
 if(file.exists(paste0(path, "/SDMs_for_rare_species_modeling/data/south.csv" ))){
   load(paste0(path, "/SDMs_for_rare_species_modeling/data/sims_data.RData" ))}
-us <- map_data('state')
 
-#Color Schemes
+#Plotting Information #####
+#us <- map_data('state')
+
 nicheCols <- brewer.pal(6, "Dark2")
 
 #Functions
@@ -70,14 +77,24 @@ computeRMSEWeighted = function(Y, predY) {
                   mean((Y[Y==0]-predY[Y==0])^2, na.rm=TRUE)))
   return(RMSE)
 }
-computeR2 = function(Y, predY, method="pearson"){
+
+computeTjurR2 = function(Y, predY) {
 
 
-  co = cor(Y, predY, method=method, use='pairwise')
-  R2 = sign(co)*co^2
+    R2 = mean(predY[which(Y == 1)]) - mean(predY[which(Y == 0)])
 
   return(R2)
 }
+
+# This is not the correct function to use
+# computeR2 = function(Y, predY, method="pearson"){
+#
+#
+#   co = cor(Y, predY, method=method, use='pairwise')
+#   R2 = sign(co)*co^2
+#
+#   return(R2)
+# }
 
 #Create directories for storing models
 
@@ -115,14 +132,34 @@ for(i in 1:length(models)){
 }
 
 
-#These are defined in the script 01_Simulate_species
-sd_narrow <- diag(c(0.9, 2.5))
+#These are defined in the script 00a_Run_Once.R using
+# data from the real species community
+var_narrow <- diag(c(0.9, 2.5))
+sd_narrow <- sqrt(var_narrow)
+
 mu_ext <- c(-3.5, 2)
 mu_avg <- mu_avg <- c(mean(X_bar$mu_PC1), mean(X_bar$mu_PC3))
-sd_broad <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T),
-                     quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)))
+var_broad <- diag(x=c(quantile(X_bar$sd_PC1, probs=0.90, na.rm=T),
+                     quantile(X_bar$sd_PC3, probs=0.90, na.rm=T)))^2
+sd_broad <- sqrt(var_broad)
 
 
-#ESM formulas
+#ESM formulas #####
 formulaMatrix <- read.csv("../data/formulaMatrix.csv",
                           header=T)
+
+#Realized Niche Estimates #####
+#These are created in #00a_Run_Once
+load("../data/estSp.RData")
+
+#Color Palette for plotting
+#https://personal.sron.nl/~pault/#sec:qualitative
+bright <- c("#4477AA", "#66CCEE",
+            "#228833", "#CCBB44",
+            "#EE6677", "#AA3377",
+            "#BBBBBB")
+my_bright <- bright[c(3,1, 2, 5, 6)]
+
+#blue, cyan, green, yellow, red, purple, grey
+
+

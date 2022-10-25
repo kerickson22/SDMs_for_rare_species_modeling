@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 #DS Store
 .DS_Store
+
+#Model files 
+data/models/

@@ -1,0 +1,33 @@
+---
+title: "Plot of betas for real species"
+author: "K. D. Erickson"
+date: "2022-10-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Hmsc)
+library(MCMCvis)
+library(knitr)
+load("../data/real_species_joint_Hmsc.RData")
+mpost <- convertToCodaObject(m)
+betas <- MCMCsummary(mpost$Beta)
+```
+
+## Hmsc for real species 
+
+# Figure 
+
+Grey shading indicates the credible interval overlaps zero. 
+
+
+```{r, fig.height=12}
+MCMCplot(mpost$Beta, ref_ovl=TRUE)
+
+```
+
+# Table
+```{r}
+kable(round(betas,2))
+```

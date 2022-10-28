@@ -1,4 +1,7 @@
 # Run Hmsc joint on computer 1
+
+#Computer 1 doesn't seem to work well with google
+
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
 }
@@ -22,15 +25,4 @@ save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer1.RData
 
 
 
-source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc.R"))
-
-if(!file.exists(paste0(path2, "/models/",
-                       modelType[1], "/results_start.RData" ))) {
-  k <- "computer_1"
-  save(k, file=paste0(path2, "/models/",
-                       modelType[1], "/results_start.RData"))
-  myfile <- paste0(path2, "/models/",
-                   modelType[1], "/results_start.RData" ) %>%
-    drive_upload(paste0("status_updates_for_Hmsc_joint/", k, ".RData"))
-  source(paste0(path, "/SDMS_for_rare_species_modeling/code/03_Collate_Results_joint_Hmsc.R"))
-}
+source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc_no_google.R"))

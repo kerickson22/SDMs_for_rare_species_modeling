@@ -16,7 +16,7 @@ if(Sys.info()['sysname'] == "Windows") {
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-modelType  <- models[4]
+modelType  <- models[3]
 
 weights_df <- expand.grid(species, sizes, replicates)
 names(weights_df) <- c("species", "sizes", "replicates")
@@ -30,7 +30,7 @@ timeStart <- Sys.time()
 
 for( r in 1:100){
   for (s in 1:length(species)){
-    for (n in 1:length(sizes)){
+    for (n in 3:length(sizes)){
 
       timeStart1 <- Sys.time()
       model <-list()
@@ -204,7 +204,7 @@ for( r in 1:100){
                                      weights.class0 = Y_test,
                                      curve=TRUE)$auc.integral
 
-        model$TjursR2 <- computeR2(Y=Y_test,
+        model$TjursR2 <- computeTjurR2(Y=Y_test,
                                    predY=pred_esm)
 
         #Species Response Curves

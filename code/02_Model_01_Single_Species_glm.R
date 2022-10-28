@@ -2,6 +2,8 @@
 
 #In this script we use a basic glm
 
+#Single-species glm should only be run for models
+# with N>=8
 if(Sys.info()['sysname'] == "Darwin") {
   path <- "/Users/curculion/Documents/GitHub"
   path2 <- "/Users/curculion/Documents/GitHub"
@@ -15,13 +17,13 @@ if(Sys.info()['sysname'] == "Windows") {
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-modelType  <- models[2]
+modelType  <- models[1]
 
 timeStart <- Sys.time()
 
 for( r in 1:length(replicates)){
   for (s in 1:length(species)){
-    for (n in 2:length(sizes)){
+    for (n in 3:length(sizes)){
 
       timeStart1 <- Sys.time()
       model <-list()
@@ -66,7 +68,7 @@ for( r in 1:length(replicates)){
                                contrastWeight = contrastWeights)
 
       model$RMSEWeighted <- computeRMSEWeighted(Y_test, model$preds)
-      model$TjursR2 <- computeR2(Y_test, model$preds)
+      model$TjursR2 <- computeTjurR2(Y_test, model$preds)
       #preds2 <- computePredictedValues(m) #fits to training data
       #preds.mean <- apply(model$preds, FUN='mean', margin='1')
 

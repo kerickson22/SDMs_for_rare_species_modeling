@@ -17,7 +17,7 @@ if(Sys.info()['sysname'] == "Windows") {
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-modelType  <- models[3]
+modelType  <- models[2]
 
 weights_df <- expand.grid(species, sizes, replicates)
 names(weights_df) <- c("species", "sizes", "replicates")
@@ -166,7 +166,7 @@ for( r in 1:100){
                                      weights.class0 = Y_test,
                                      curve=TRUE)$auc.integral
 
-        model$TjursR2 <- computeR2(Y=Y_test,
+        model$TjursR2 <- computeTjurR2(Y=Y_test,
                                    predY=pred_esm)
 
         #Species Response Curves

@@ -1,4 +1,8 @@
 # Run Hmsc joint on computer 3
+
+#This is one computer that has problems
+#communicating with google drive it seems
+
 if(Sys.info()['sysname'] == "Darwin") {
 path <- "/Users/curculion/Documents/GitHub"
 }
@@ -22,15 +26,5 @@ save(session, file=paste0(path2, "/models/Hmsc_joint/sessionInfo_computer3.RData
 
 
 
-source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc.R"))
+source(paste0(path, "/SDMS_for_rare_species_modeling/code/02_Model_5_Joint_Hmsc_no_google.R"))
 
-if(!file.exists(paste0(path2, "/models/",
-                       modelType[1], "/results_start.RData" ))) {
-  k <- "computer_3"
-  save(k, file=paste0(path2, "/models/",
-                       modelType[1], "/results_start.RData"))
-  myfile <- paste0(path2, "/models/",
-                   modelType[1], "/results_start.RData" ) %>%
-    drive_upload(paste0("status_updates_for_Hmsc_joint/", k, ".RData"))
-  source(paste0(path, "/SDMS_for_rare_species_modeling/code/03_Collate_Results_joint_Hmsc.R"))
-}

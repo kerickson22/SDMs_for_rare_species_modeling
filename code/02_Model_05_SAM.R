@@ -17,7 +17,7 @@ if(Sys.info()['sysname'] == "Windows") {
 
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
-modelType  <- models[6]
+modelType  <- models[5]
 
 timeStart <- Sys.time()
 
@@ -71,7 +71,7 @@ for( r in 1:length(replicates)){
                                  contrastWeight = contrastWeights)
 
         model$RMSEWeighted <- computeRMSEWeighted(Y_test["SimSp"], model$preds)
-        model$TjursR2 <- computeR2(Y_test["SimSp"], model$preds)
+        model$TjursR2 <- computeTjurR2(Y_test["SimSp"], model$preds)
 
 
         b1 <- m$beta[1]*m$tau["SimSp",1] +

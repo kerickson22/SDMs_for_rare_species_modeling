@@ -16,7 +16,7 @@ if(Sys.info()['sysname'] == "Windows") {
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
 #Joint_Hmsc #####
-modelType  <- models[5]
+modelType  <- models[4]
 results <- expand.grid(species, sizes, replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3),]
 names(results) <- c("species", "size", "rep")

@@ -229,12 +229,12 @@ for( r in 1:100){
         if(sd(model_curve_PC1_ESM)>0) {
           model$PC1_rankCor <- compareResponse(model_curve_PC1_ESM,
                                                real_curve_PC1,data =data.frame(x1),graph=F)$rankCor
-        } else{model$PC1_rankCor <- NA}
+        } else{model$PC1_rankCor <- 0}
 
         if(sd(model_curve_PC3_ESM)>0) {
           model$PC3_rankCor <- compareResponse(model_curve_PC3_ESM,
                                                real_curve_PC3, data =data.frame(x3), graph=F)$rankCor
-        } else{model$PC3_rankCor <- NA}
+        } else{model$PC3_rankCor <- 0}
         #Calculate PC2 response
         x1_PC2_response <- mu_avg[1]
         x2_PC2_response <- south$PC2

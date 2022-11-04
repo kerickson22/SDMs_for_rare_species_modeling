@@ -143,8 +143,9 @@ p1 <- ggplot() +
   ggtitle("Central \n Generalist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(0.135, 1.06) + ylab( "AUC") +
-  annotate("text", x=2, y=1.05, label="NOT FINAL: Need to rerun ESMs and Hmsc2:4", col="red")
+  ylab( "AUC") +
+  coord_cartesian(ylim=c(0.4, 0.9)) + #have to use coord_cartesian() so that ylim doesn't affect stats
+  annotate("text", x=3, y=0.8, size=2, label="NOT FINAL: \n Only 15 Hmsc", col="red")
 
 p2 <- ggplot() +
   stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=auc, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
@@ -154,7 +155,8 @@ p2 <- ggplot() +
   ggtitle("Marginal \n Generalist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(0.135, 1.06) + ylab( "AUC")
+  coord_cartesian(ylim=c(0.4, 0.9)) +
+  ylab( "AUC")
 
 p3 <-  ggplot() +
   stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=auc, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
@@ -164,7 +166,8 @@ p3 <-  ggplot() +
   ggtitle("Central \n Specialist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(0.135, 1.06) + ylab( "AUC")
+  coord_cartesian(ylim=c(0.4, 0.9)) +
+  ylab( "AUC")
 
 
 p4 <- ggplot() +
@@ -175,7 +178,8 @@ p4 <- ggplot() +
   ggtitle("Marginal \n Specialist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(0.135, 1.06) + ylab( "AUC")
+  coord_cartesian(ylim=c(0.4, 0.9)) +
+  ylab( "AUC")
 
 p5 <- ggplot() +
   stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=TjursR2, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
@@ -185,7 +189,8 @@ p5 <- ggplot() +
   ggtitle("Central \n Generalist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(-0.3, 0.6) + ylab( expression(paste("Tjurs R"^2)))
+  coord_cartesian(ylim=c(-0.01, 0.4)) +
+  ylab( expression(paste("Tjurs R"^2)))
 
 
 p6 <- ggplot() +
@@ -196,7 +201,8 @@ p6 <- ggplot() +
   ggtitle("Marginal \n Generalist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(-0.3, 0.6) + ylab( expression(paste("Tjurs R"^2)))
+  coord_cartesian(ylim=c(-0.01, 0.4)) +
+  ylab( expression(paste("Tjurs R"^2)))
 
 
 p7 <-  ggplot() +
@@ -207,7 +213,8 @@ p7 <-  ggplot() +
   ggtitle("Central \n Specialist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(-0.3, 0.6) + ylab( expression(paste("Tjurs R"^2)))
+  coord_cartesian(ylim=c(-0.01, 0.4)) +
+  ylab( expression(paste("Tjurs R"^2)))
 
 
 p8 <- ggplot() +
@@ -218,7 +225,8 @@ p8 <- ggplot() +
   ggtitle("Marginal \n Specialist") +
   xlab("Presences") +
   scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
-  ylim(-0.3, 0.6) + ylab( expression(paste("Tjurs R"^2)))
+  coord_cartesian(ylim=c(-0.01, 0.4)) +
+  ylab( expression(paste("Tjurs R"^2)))
 
 p1 <- p1 + theme(plot.title =element_text(hjust=0.5, size=12))
 
@@ -287,7 +295,377 @@ pdf("./Figures/03_Discrimination_ALL_MODELS.pdf", width=6.5,
 ggarrange(p1, p2, p3, p4,
           p5, p6, p7, p8,
           widths=c(3.9, 3, 3, 3,
-                   3.8, 3, 3, 3),
-          ncol=4, nrow=2, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+                   3.9, 3, 3, 3),
+          ncol=4, nrow=2, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.15, "cm"))
 #top, right, bottom, left
+dev.off()
+
+#S1 RMSE ######
+
+p1 <- ggplot() +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Central \n Generalist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.75, 1)) +
+  ylab( "Weighted RMSE") +
+  annotate("text", x=3, y=0.8, label="NOT FINAL: \n Only 15 Hmsc", col="red")
+
+p2 <- ggplot() +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Marginal \n Generalist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.75, 1)) +
+  ylab( "Weighted RMSE")
+
+p3 <- ggplot() +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Central \n Specialist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.75, 1)) +
+  ylab( "Weighted RMSE")
+
+
+p4 <- ggplot() +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=RMSEWeighted, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=RMSEWeighted, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Marginal \n Specialist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.75, 1)) +
+  ylab( "Weighted RMSE")
+
+
+p1 <- p1 + theme(plot.title =element_text(hjust=0.5, size=12))
+
+p2 <- p2 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p3 <- p3 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p4 <- p4 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p1 <- p1 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+#top, right, bottom, left
+
+p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+pdf("./Figures/S1_RMSE.pdf", width=6.5,
+    height=3.5, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+          ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+
+#S2 AUC-PR
+p1 <- ggplot() +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Central \n Generalist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.5, 0.8)) +
+  ylab( "AUC_PR") +
+  annotate("text", x=3, y=0.7, label="NOT FINAL: \n Only 15 Hmsc", col="red")
+
+p2 <- ggplot() +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Marginal \n Generalist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.5, 0.8)) +
+  ylab( "AUC_PR")
+
+p3 <- ggplot() +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Central \n Specialist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.5, 0.8)) +
+  ylab( "AUC_PR")
+
+
+p4 <- ggplot() +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=pr_integral, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=pr_integral, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Polynomial", "Hmsc", "SAM"), name="Model") +
+  ggtitle("Marginal \n Specialist") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0.5, 0.8)) +
+  ylab( "AUC_PR")
+
+
+p1 <- p1 + theme(plot.title =element_text(hjust=0.5, size=12))
+
+p2 <- p2 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p3 <- p3 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p4 <- p4 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title =element_text(hjust=0.5, size=12))
+
+p1 <- p1 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+#top, right, bottom, left
+
+p2 <- p2 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p3 <- p3 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+#top, right, bottom, left
+p4 <- p4 + theme(plot.margin=unit(c(0.1,0.1,0.1,0.1),"cm"))
+
+
+pdf("./Figures/S2_AUC_PR.pdf", width=6.5,
+    height=3.5, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggarrange(p1, p2, p3, p4, widths=c(3.9, 3, 3, 3),
+          ncol=4, nrow=1, common.legend=T) + theme(plot.margin = margin(0.1,0.15,0.1,0.1, "cm"))
+#top, right, bottom, left
+dev.off()
+
+# PC Calibration #####
+p1 <- ggplot() +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="mean", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=PC1_rankCor, color=model), fun="mean", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC1") +
+  ggtitle("Central \n Generalist")
+
+p2 <- ggplot() +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC1") +
+  ggtitle("Marginal \n Generalist")
+
+p3 <- ggplot() +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC1") +
+  ggtitle("Central \n Specialist")
+
+p4 <- ggplot() +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=PC1_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=PC1_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC1") +
+  ggtitle("Marginal \n Specialist")
+
+p5 <- ggplot() +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0, 0.4)) +
+  ylab( "SD PC2 Response") +
+  ggtitle("Central \n Generalist")
+
+p6 <- ggplot() +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0, 0.4)) +
+  ylab( "SD PC2 Response") +
+  ggtitle("Marginal \n Generalist")
+
+p7 <- ggplot() +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0, 0.4)) +
+  ylab( "SD PC2 Response") +
+  ggtitle("Central \n Specialist")
+
+p8 <- ggplot() +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=varPC2Response, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=varPC2Response, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(0, 0.4)) +
+  ylab( "SD PC2 Response") +
+  ggtitle("Marginal \n Specialist")
+
+
+p9 <- ggplot() +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_avg_converged, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC3") +
+  ggtitle("Central \n Generalist")
+
+p10 <- ggplot() +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_broad_ext_converged, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC3") +
+  ggtitle("Marginal \n Generalist")
+
+p11 <- ggplot() +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_avg_converged, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC3") +
+  ggtitle("Central \n Specialist")
+
+p12 <- ggplot() +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=PC3_rankCor, color=model, shape=model), fun="median", fun.min=function(z) { quantile(z,0.1) }, fun.max=function(z) { quantile(z,0.9) }, size=0.5) +
+  stat_summary(data=dat_narrow_ext_converged, aes(x=pos, y=PC3_rankCor, color=model), fun="median", geom="line") +
+  geom_hline(yintercept=0.5, linetype="dashed", size=.5, color="black") + scale_color_manual(values=my_bright,labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  scale_shape_manual(values=c(15:18,8), labels=c("glm", "ESM:Linear", "ESM:Quadratic", "Hmsc", "SAM"), name="Model") +
+  xlab("Presences") +
+  scale_x_continuous( breaks = c(1, 2, 3, 4, 5, 6), labels=c("2", "4", "8", "16", "32", "64")) +
+  coord_cartesian(ylim=c(-1, 1)) +
+  ylab( "Rank Correlation PC3") +
+  ggtitle("Marginal \n Specialist")
+
+
+
+p2 <- p2 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p3 <- p3 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p4 <- p4 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+p6 <- p6 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p7 <- p7 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p8 <- p8 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p10 <- p10 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p11 <- p11 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p12 <- p12 +
+  theme(axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+
+
+pdf("./Figures/S5_PC_alignment.pdf", width=6.5,
+    height=8, pointsize=8,
+    encoding="TeXtext.enc", onefile=F)
+ggarrange(p1,p2, p3, p4,p5, p6, p7, p8, p9, p10, p11, p12, widths=c(
+  2,1.5, 1.5, 1.5,
+  2, 1.5, 1.5, 1.5,
+  2, 1.5, 1.5, 1.5),
+  heights= c(
+    2, 2, 2, 2,
+    2, 1.2, 1.2, 1.2,
+    2, 1.2, 1.2, 1.2
+  ), ncol=4, nrow=3, common.legend=T)
+
 dev.off()

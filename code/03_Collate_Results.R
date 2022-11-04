@@ -16,7 +16,7 @@ if(Sys.info()['sysname'] == "Windows") {
 source(paste0(path, "/SDMs_for_rare_species_modeling/code/00b_Constants.R"))
 
 #Joint_Hmsc #####
-modelType  <- models[5]
+modelType  <- models[4]
 results <- expand.grid(species, sizes, replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3),]
 names(results) <- c("species", "size", "rep")
@@ -60,11 +60,11 @@ myfile <- paste0(path2, "/models/",
 # Single-species glm #####
 
 #glm should only be used for n>2
-modelType  <- models[2]
-results <- expand.grid(species, sizes[2:6], replicates)
+modelType  <- models[1]
+results <- expand.grid(species, sizes[3:6], replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3), ]
 names(results) <- c("species", "size", "rep")
-
+results$model <- rep(modelType, length(results$species))
 results$auc <- rep(NA, length(results$species))
 results$RMSEWeighted <- rep(NA, length(results$species))
 results$TjursR2 <- rep(NA, length(results$species))
@@ -105,9 +105,9 @@ for (i in 1:length(results$species)) {
 save(results, file=paste0(path2, "/models/",
                           modelType[1], "/results.RData" ))
 
-# ESM_simple #####
+# ESM_linear #####
 
-modelType  <- models[3]
+modelType  <- models[2]
 results <- expand.grid(species, sizes, replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3), ]
 names(results) <- c("species", "size", "rep")
@@ -154,7 +154,7 @@ save(results, file=paste0(path2, "/models/",
 
 # ESM_complex #####
 #ESM complex should only be used for n>=8
-modelType  <- models[4]
+modelType  <- models[3]
 results <- expand.grid(species, sizes[3:6], replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3), ]
 names(results) <- c("species", "size", "rep")
@@ -200,8 +200,9 @@ save(results, file=paste0(path2, "/models/",
                           modelType[1], "/results.RData" ))
 
 # Joint Hmsc ####
+
 # SAM #####
-modelType  <- models[6]
+modelType  <- models[5]
 results <- expand.grid(species, sizes, replicates)
 results <- results[order(results$Var1, results$Var2, results$Var3), ]
 names(results) <- c("species", "size", "rep")
@@ -265,40 +266,40 @@ save(taus, file=paste0(path2, "/models/",
 
 #**GLM #####
 load(paste0(path2, "/models/",
-            models[2], "/results.RData" ))
+            models[1], "/results.RData" ))
 results_glm <- results
-results_glm$model <- rep(models[2], length(results_glm$species))
+results_glm$model <- rep(models[1], length(results_glm$species))
 rm(results)
 
 #**ESM_simple #####
 load(paste0(path2, "/models/",
-            models[3], "/results.RData" ))
+            models[2], "/results.RData" ))
 results_ESM_simple <- results
-results_ESM_simple$model <- rep(models[3], length(results_ESM_simple$species))
+results_ESM_simple$model <- rep(models[2], length(results_ESM_simple$species))
 rm(results)
 results_ESM_simple_converged <- subset(results_ESM_simple, !is.na(results_ESM_simple$auc))
 
 #**ESM_complex #####
 load(paste0(path2, "/models/",
-            models[4], "/results.RData" ))
+            models[3], "/results.RData" ))
 results_ESM_complex <- results
-results_ESM_complex$model <- rep(models[4], length(results_ESM_complex$species))
+results_ESM_complex$model <- rep(models[3], length(results_ESM_complex$species))
 rm(results)
 results_ESM_complex_converged <- subset(results_ESM_complex, !is.na(results_ESM_complex$auc))
 
 #**Hmsc_joint #####
 load(paste0(path2, "/models/",
-            models[5], "/results.RData" ))
+            models[4], "/results.RData" ))
 results_Hmsc_joint <- results
-results_Hmsc_joint$model <- rep(models[5], length(results_Hmsc_joint$species))
+results_Hmsc_joint$model <- rep(models[4], length(results_Hmsc_joint$species))
 rm(results)
 results_Hmsc_joint_converged <- subset(results_Hmsc_joint, results_Hmsc_joint$Rhat < 1.2)
 
 #**SAM#####
 load(paste0(path2, "/models/",
-            models[6], "/results.RData" ))
+            models[5], "/results.RData" ))
 results_SAM <- results
-results_SAM$model <- rep(models[6], length(results_SAM$species))
+results_SAM$model <- rep(models[5], length(results_SAM$species))
 rm(results)
 results_SAM_converged <- subset(results_SAM, !is.na(results_SAM$auc))
 
@@ -325,10 +326,10 @@ converged$size <- converged$size %>% recode("size2" = "2", "size4" = "4", "size8
   factor(levels=c("2", "4", "8", "16", "32","64"))
 
 full$species <- factor(full$species)
-full$model <- factor(full$model)
+full$model <- factor(full$model, levels=c("glm", "ESM_simple", "ESM_complex", "Hmsc_joint", "SAM"))
 
 converged$species <- factor(converged$species)
-converged$model <- factor(converged$model)
+converged$model <- factor(converged$model, levels=c("glm", "ESM_simple", "ESM_complex", "Hmsc_joint", "SAM"))
 
 #Calculate plotting positions #####
 

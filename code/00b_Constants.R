@@ -31,6 +31,8 @@ library(googledrive)
 library(dplyr)
 #library(ggpubr)
 library(abind)
+library(tidyr)
+library(patchwork)
 
 ## Set working directory #####
 # Set working directory to current file location
@@ -162,4 +164,6 @@ my_bright <- bright[c(3,1, 2, 5, 6)]
 
 #blue, cyan, green, yellow, red, purple, grey
 
-
+rwb2 <- c("#ca0020",
+          "#f4a582",
+          "#0571b0")

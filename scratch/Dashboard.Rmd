@@ -1,0 +1,32 @@
+---
+title: "SDMs for Rare Species"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: true
+    social: menu
+    source: embed
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+x1 <- runif(10, 0,1)
+x2 <- runif(10,0, 1)
+```
+
+### 1. Simulating species from the real community
+
+```{r}
+plot(x1, x2)
+```
+
+***
+
+Some sidebar text 
+
+### 2. Model Convergence
+```{r}
+hist(x1)
+```
+
+***
+Second sidebar

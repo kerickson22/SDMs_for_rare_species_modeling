@@ -294,7 +294,7 @@ results_Hmsc_joint <- results
 results_Hmsc_joint$model <- rep(models[4], length(results_Hmsc_joint$species))
 rm(results)
 results_Hmsc_joint_converged <- subset(results_Hmsc_joint, results_Hmsc_joint$Rhat < 1.2)
-
+#As of 11/10 83 reps have run
 #**SAM#####
 load(paste0(path2, "/models/",
             models[5], "/results.RData" ))
@@ -326,47 +326,59 @@ converged$size <- converged$size %>% recode("size2" = "2", "size4" = "4", "size8
   factor(levels=c("2", "4", "8", "16", "32","64"))
 
 full$species <- factor(full$species)
-full$model <- factor(full$model, levels=c("glm", "ESM_simple", "ESM_complex", "Hmsc_joint", "SAM"))
-
 converged$species <- factor(converged$species)
-converged$model <- factor(converged$model, levels=c("glm", "ESM_simple", "ESM_complex", "Hmsc_joint", "SAM"))
+
+
+full$model <- full$model %>%
+  recode("glm" = "GLM", "ESM_simple" = "ESM-L",
+         "ESM_complex"="ESM-P",
+         "Hmsc_joint"="HMSC", "SAM"="SAM") %>%
+  factor(levels=c("GLM", "ESM-L", "ESM-P", "HMSC", "SAM"))
+
+converged$model <- converged$model %>%
+  recode("glm" = "GLM", "ESM_simple" = "ESM-L",
+         "ESM_complex"="ESM-P",
+         "Hmsc_joint"="HMSC", "SAM"="SAM") %>%
+  factor(levels=c("GLM", "ESM-L", "ESM-P", "HMSC", "SAM"))
+
+
 
 #Calculate plotting positions #####
 
 for (i in 1:length(full$model)) {
-  if(full$model[i] == "glm") {
+  if(full$model[i] == levels(full$model)[1]) {
     full$pos[i] = as.numeric(full$size[i]) - 0.16
   }
-  if(full$model[i] == "ESM_simple") {
+  if(full$model[i] == levels(full$model)[2]) {
     full$pos[i] = as.numeric(full$size[i]) - 0.08
   }
 
-  if(full$model[i] == "ESM_complex") {
+  if(full$model[i] == levels(full$model)[3]) {
     full$pos[i] = as.numeric(full$size[i])}
 
-  if(full$model[i] == "Hmsc_joint") {
+  if(full$model[i] == levels(full$model)[4]) {
     full$pos[i] = as.numeric(full$size[i]) + 0.08
   }
-  if(full$model[i] == "SAM") {
+  if(full$model[i] == levels(full$model)[5]) {
     full$pos[i] = as.numeric(full$size[i]) + 0.16
   }
 }
 
 for (i in 1:length(converged$model)) {
-  if(converged$model[i] == "glm") {
+  if(converged$model[i] == levels(converged$model)[1]) {
     converged$pos[i] = as.numeric(converged$size[i]) - 0.16
   }
-  if(converged$model[i] == "ESM_simple") {
+  if(converged$model[i] == levels(converged$model)[2]) {
     converged$pos[i] = as.numeric(converged$size[i]) - 0.08
   }
 
-  if(converged$model[i] == "ESM_complex") {
+  if(converged$model[i] == levels(converged$model)[3]) {
     converged$pos[i] = as.numeric(converged$size[i])}
 
-  if(converged$model[i] == "Hmsc_joint") {
+  if(converged$model[i] == levels(converged$model)[4]) {
     converged$pos[i] = as.numeric(converged$size[i]) + 0.08
   }
-  if(converged$model[i] == "SAM") {
+  if(converged$model[i] == levels(converged$model)[5]) {
     converged$pos[i] = as.numeric(converged$size[i]) + 0.16
   }
 }
@@ -400,77 +412,78 @@ sample_size_broad_avg$pos <- rep(NA, length(sample_size_broad_avg$model))
 #Assign pos value
 # Broad Avg
 for (i in 1:length(sample_size_broad_avg$model)) {
-  if(sample_size_broad_avg$model[i] == "glm") {
+  if(sample_size_broad_avg$model[i] == levels(full$model)[1]) {
     sample_size_broad_avg$pos[i] = as.numeric(sample_size_broad_avg$size[i]) - 0.4
   }
-  if(sample_size_broad_avg$model[i] == "ESM_simple") {
+  if(sample_size_broad_avg$model[i] == levels(full$model)[2]) {
     sample_size_broad_avg$pos[i] = as.numeric(sample_size_broad_avg$size[i]) - 0.2
   }
 
-  if(sample_size_broad_avg$model[i] == "ESM_complex") {
+  if(sample_size_broad_avg$model[i] == levels(full$model)[3]) {
     sample_size_broad_avg$pos[i] = as.numeric(sample_size_broad_avg$size[i])}
 
-  if(sample_size_broad_avg$model[i] == "Hmsc_joint") {
+  if(sample_size_broad_avg$model[i] == levels(full$model)[4]) {
     sample_size_broad_avg$pos[i] = as.numeric(sample_size_broad_avg$size[i]) + 0.2
   }
-  if(sample_size_broad_avg$model[i] == "SAM") {
+  if(sample_size_broad_avg$model[i] == levels(full$model)[5]) {
     sample_size_broad_avg$pos[i] = as.numeric(sample_size_broad_avg$size[i]) + 0.4
   }
 }
+
 #Broad Ext
 for (i in 1:length(sample_size_broad_ext$model)) {
-  if(sample_size_broad_ext$model[i] == "glm") {
+  if(sample_size_broad_ext$model[i] == levels(full$model)[1]) {
     sample_size_broad_ext$pos[i] = as.numeric(sample_size_broad_ext$size[i]) - 0.4
   }
-  if(sample_size_broad_ext$model[i] == "ESM_simple") {
+  if(sample_size_broad_ext$model[i] == levels(full$model)[2]) {
     sample_size_broad_ext$pos[i] = as.numeric(sample_size_broad_ext$size[i]) - 0.2
   }
 
-  if(sample_size_broad_ext$model[i] == "ESM_complex") {
+  if(sample_size_broad_ext$model[i] == levels(full$model)[3]) {
     sample_size_broad_ext$pos[i] = as.numeric(sample_size_broad_ext$size[i])}
 
-  if(sample_size_broad_ext$model[i] == "Hmsc_joint") {
+  if(sample_size_broad_ext$model[i] == levels(full$model)[4]) {
     sample_size_broad_ext$pos[i] = as.numeric(sample_size_broad_ext$size[i]) + 0.2
   }
-  if(sample_size_broad_ext$model[i] == "SAM") {
+  if(sample_size_broad_ext$model[i] == levels(full$model)[5]) {
     sample_size_broad_ext$pos[i] = as.numeric(sample_size_broad_ext$size[i]) + 0.4
   }
 }
 #Narrow Avg
 for (i in 1:length(sample_size_narrow_avg$model)) {
-  if(sample_size_narrow_avg$model[i] == "glm") {
+  if(sample_size_narrow_avg$model[i] == levels(full$model)[1]) {
     sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) - 0.4
   }
-  if(sample_size_narrow_avg$model[i] == "ESM_simple") {
+  if(sample_size_narrow_avg$model[i] == levels(full$model)[2]) {
     sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) - 0.2
   }
 
-  if(sample_size_narrow_avg$model[i] == "ESM_complex") {
+  if(sample_size_narrow_avg$model[i] == levels(full$model)[3]) {
     sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i])}
 
-  if(sample_size_narrow_avg$model[i] == "Hmsc_joint") {
+  if(sample_size_narrow_avg$model[i] == levels(full$model)[4]) {
     sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) + 0.2
   }
-  if(sample_size_narrow_avg$model[i] == "SAM") {
+  if(sample_size_narrow_avg$model[i] == levels(full$model)[5]) {
     sample_size_narrow_avg$pos[i] = as.numeric(sample_size_narrow_avg$size[i]) + 0.4
   }
 }
 #Narrow Ext
 for (i in 1:length(sample_size_narrow_ext$model)) {
-  if(sample_size_narrow_ext$model[i] == "glm") {
+  if(sample_size_narrow_ext$model[i] == levels(full$model)[1]) {
     sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) - 0.4
   }
-  if(sample_size_narrow_ext$model[i] == "ESM_simple") {
+  if(sample_size_narrow_ext$model[i] == levels(full$model)[2]) {
     sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) - 0.2
   }
 
-  if(sample_size_narrow_ext$model[i] == "ESM_complex") {
+  if(sample_size_narrow_ext$model[i] == levels(full$model)[3]) {
     sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i])}
 
-  if(sample_size_narrow_ext$model[i] == "Hmsc_joint") {
+  if(sample_size_narrow_ext$model[i] == levels(full$model)[4]) {
     sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) + 0.2
   }
-  if(sample_size_narrow_ext$model[i] == "SAM") {
+  if(sample_size_narrow_ext$model[i] == levels(full$model)[5]) {
     sample_size_narrow_ext$pos[i] = as.numeric(sample_size_narrow_ext$size[i]) + 0.4
   }
 }
@@ -480,3 +493,209 @@ write.csv(sample_size_broad_avg, file="../data/sample_size_broad_avg.csv")
 write.csv(sample_size_broad_ext, file="../data/sample_size_broad_ext.csv")
 write.csv(sample_size_narrow_avg, file="../data/sample_size_narrow_avg.csv")
 write.csv(sample_size_narrow_ext, file="../data/sample_size_narrow_ext.csv")
+
+#Calculate correlation counts #####
+cor <- expand.grid(models, c(2, 4, 8, 16, 32, 64))
+names(cor) <- c("model", "size")
+cor$size <- factor(cor$size)
+cor$model <- cor$model %>%
+  recode("glm" = "GLM", "ESM_simple" = "ESM-L",
+         "ESM_complex"="ESM-P",
+         "Hmsc_joint"="HMSC", "SAM"="SAM") %>%
+  factor(levels=c("GLM", "ESM-L", "ESM-P", "HMSC", "SAM"))
+
+
+
+cor$PC1_neg <- rep(NA, length(cor$size))
+cor$PC1_neutral <- rep(NA, length(cor$size))
+cor$PC1_pos <- rep(NA, length(cor$size))
+cor$PC3_neg <- rep(NA, length(cor$size))
+cor$PC3_neutral <- rep(NA, length(cor$size))
+cor$PC3_pos <- rep(NA, length(cor$size))
+
+
+
+cor_broad_avg <- cor
+cor_broad_ext <- cor
+cor_narrow_avg <- cor
+cor_narrow_ext <- cor
+
+tabulate_cor <- function(dat, cor) {
+  for (i in 1:length(cor$size)) {
+    temp <- subset(dat,
+                   dat$model == cor$model[i] &
+                     dat$size == cor$size[i])
+    cor$PC1_neg[i] <- nrow(temp[temp$PC1_rankCor < - 0.33, ])
+    cor$PC1_neutral[i] <-nrow(temp[temp$PC1_rankCor >= - 0.33 & temp$PC1_rankCor < 0.33, ])
+    cor$PC1_pos[i] <- nrow(temp[temp$PC1_rankCor >= 0.33,])
+
+    cor$PC3_neg[i] <- nrow(temp[temp$PC3_rankCor < - 0.33, ])
+    cor$PC3_neutral[i] <-nrow(temp[temp$PC3_rankCor >= - 0.33 & temp$PC3_rankCor < 0.33, ])
+    cor$PC3_pos[i] <- nrow(temp[temp$PC3_rankCor >=0.33,])
+
+  }
+  return(cor)
+}
+
+cor_broad_avg <- tabulate_cor(dat_broad_avg_converged, cor_broad_avg)
+cor_broad_ext <- tabulate_cor(dat_broad_ext_converged, cor_broad_ext)
+cor_narrow_avg <- tabulate_cor(dat_narrow_avg_converged, cor_narrow_avg)
+cor_narrow_ext <- tabulate_cor(dat_narrow_ext_converged, cor_narrow_ext)
+
+cor_broad_avg_long_PC1 <- gather(cor_broad_avg[,c(1,2, 3:5)], "PC1", "PC1_counts", PC1_neg, PC1_neutral, PC1_pos)
+cor_broad_avg_long_PC3 <- gather(cor_broad_avg[,c(1,2, 6:8)], "PC3", "PC3_counts", PC3_neg, PC3_neutral, PC3_pos)
+cor_broad_ext_long_PC1 <- gather(cor_broad_ext[,c(1,2, 3:5)], "PC1", "PC1_counts", PC1_neg, PC1_neutral, PC1_pos)
+cor_broad_ext_long_PC3 <- gather(cor_broad_ext[,c(1,2, 6:8)], "PC3", "PC3_counts", PC3_neg, PC3_neutral, PC3_pos)
+cor_narrow_avg_long_PC1 <- gather(cor_narrow_avg[,c(1,2, 3:5)], "PC1", "PC1_counts", PC1_neg, PC1_neutral, PC1_pos)
+cor_narrow_avg_long_PC3 <- gather(cor_narrow_avg[,c(1,2, 6:8)], "PC3", "PC3_counts", PC3_neg, PC3_neutral, PC3_pos)
+cor_narrow_ext_long_PC1 <- gather(cor_narrow_ext[,c(1,2, 3:5)], "PC1", "PC1_counts", PC1_neg, PC1_neutral, PC1_pos)
+cor_narrow_ext_long_PC3 <- gather(cor_narrow_ext[,c(1,2, 6:8)], "PC3", "PC3_counts", PC3_neg, PC3_neutral, PC3_pos)
+
+cor_broad_avg_long <- cbind(cor_broad_avg_long_PC1, cor_broad_avg_long_PC3[,3:4])
+cor_broad_ext_long <- cbind(cor_broad_ext_long_PC1, cor_broad_ext_long_PC3[,3:4])
+cor_narrow_avg_long <- cbind(cor_narrow_avg_long_PC1, cor_narrow_avg_long_PC3[,3:4])
+cor_narrow_ext_long <- cbind(cor_narrow_ext_long_PC1, cor_narrow_ext_long_PC3[,3:4])
+
+cor_broad_avg_long$PC1 <- factor(cor_broad_avg_long$PC1, levels=c("PC1_neg", "PC1_neutral", "PC1_pos"))
+cor_broad_avg_long$PC3 <- factor(cor_broad_avg_long$PC3, levels=c("PC3_neg", "PC3_neutral", "PC3_pos"))
+cor_broad_ext_long$PC1 <- factor(cor_broad_ext_long$PC1, levels=c("PC1_neg", "PC1_neutral", "PC1_pos"))
+cor_broad_ext_long$PC3 <- factor(cor_broad_ext_long$PC3, levels=c("PC3_neg", "PC3_neutral",  "PC3_pos"))
+
+cor_narrow_avg_long$PC1 <- factor(cor_narrow_avg_long$PC1, levels=c("PC1_neg", "PC1_neutral", "PC1_pos"))
+cor_narrow_avg_long$PC3 <- factor(cor_narrow_avg_long$PC3, levels=c("PC3_neg", "PC3_neutral", "PC3_pos"))
+cor_narrow_ext_long$PC1 <- factor(cor_narrow_ext_long$PC1, levels=c("PC1_neg", "PC1_neutral", "PC1_pos"))
+cor_narrow_ext_long$PC3 <- factor(cor_narrow_ext_long$PC3, levels=c("PC3_neg", "PC3_neutral", "PC3_pos"))
+
+write.csv(cor_broad_avg_long, file="../data/cor_broad_avg_long.csv")
+write.csv(cor_broad_ext_long, file="../data/cor_broad_ext_long.csv")
+write.csv(cor_narrow_avg_long, file="../data/cor_narrow_avg_long.csv")
+write.csv(cor_narrow_ext_long, file="../data/cor_narrow_ext_long.csv")
+
+#Correlation Percentages #####
+cor_broad_avg_percent <- cor_broad_avg_long
+cor_broad_ext_percent <- cor_broad_ext_long
+cor_narrow_avg_percent <- cor_narrow_avg_long
+cor_narrow_ext_percent <- cor_narrow_ext_long
+
+#Denominator
+
+getPercent <- function(cor, sample) {
+  cor$denom <- rep(NA, length(cor$model))
+  cor$PC1Frac <- rep(NA, length(cor$model))
+  cor$PC3Frac <- rep(NA, length(cor$model))
+
+  for(i in 1:length(cor$model)) {
+    temp <- subset(sample, sample$size == cor$size[i])
+    temp <- subset(temp, temp$model == cor$model[i])
+    if(length(temp$num) == 0) {
+      cor$denom[i] <- 0
+      cor$PC1Frac[i] <- 0
+      cor$PC3Frac[i] <- 0} else{
+    cor$denom[i] <- temp$num
+    cor$PC1Frac[i] <- cor$PC1_counts[i]/cor$denom[i]
+    cor$PC3Frac[i] <- cor$PC3_counts[i]/cor$denom[i]
+    }}
+  return(cor)
+}
+
+cor_broad_avg_percent <- getPercent(cor_broad_avg_percent, sample_size_broad_avg)
+cor_broad_ext_percent <- getPercent(cor_broad_ext_percent, sample_size_broad_ext)
+cor_narrow_avg_percent <- getPercent(cor_narrow_avg_percent, sample_size_narrow_avg)
+cor_narrow_ext_percent <- getPercent(cor_narrow_ext_percent, sample_size_narrow_ext)
+
+
+# cor_broad_avg_percent$model <- recode_factor(cor_broad_avg_percent$model, glm = "glm",
+#                                                        ESM_simple = "ESM \n Linear",
+#                                                           ESM_complex = "ESM \n Quadratic",
+#                                                           Hmsc_joint = "Hmsc",
+#                                                           SAM = "SAM")
+# cor_broad_ext_percent$model <- recode_factor(cor_broad_ext_percent$model, glm = "glm",
+#                                              ESM_simple = "ESM \n Linear",
+#                                              ESM_complex = "ESM \n Quadratic",
+#                                              Hmsc_joint = "Hmsc",
+#                                              SAM = "SAM")
+# cor_narrow_avg_percent$model <- recode_factor(cor_narrow_avg_percent$model, glm = "glm",
+#                                              ESM_simple = "ESM \n Linear",
+#                                              ESM_complex = "ESM \n Quadratic",
+#                                              Hmsc_joint = "Hmsc",
+#                                              SAM = "SAM")
+# cor_narrow_ext_percent$model <- recode_factor(cor_narrow_ext_percent$model, glm = "glm",
+#                                              ESM_simple = "ESM \n Linear",
+#                                              ESM_complex = "ESM \n Quadratic",
+#                                              Hmsc_joint = "Hmsc",
+#                                              SAM = "SAM")
+cor_broad_avg_percent$PC1 <- recode_factor(cor_broad_avg_percent$PC1,
+                                           PC1_neg = "Negative",
+                                           PC1_neutral = "Neutral",
+                                           PC1_pos = "Positive")
+cor_broad_avg_percent$PC3 <- recode_factor(cor_broad_avg_percent$PC3,
+                                           PC3_neg = "Negative",
+                                           PC3_neutral = "Neutral",
+                                           PC3_pos = "Positive")
+cor_broad_ext_percent$PC1 <- recode_factor(cor_broad_ext_percent$PC1,
+                                           PC1_neg = "Negative",
+                                           PC1_neutral = "Neutral",
+                                           PC1_pos = "Positive")
+cor_broad_ext_percent$PC3 <- recode_factor(cor_broad_ext_percent$PC3,
+                                           PC3_neg = "Negative",
+                                           PC3_neutral = "Neutral",
+                                           PC3_pos = "Positive")
+cor_narrow_avg_percent$PC1 <- recode_factor(cor_narrow_avg_percent$PC1,
+                                           PC1_neg = "Negative",
+                                           PC1_neutral = "Neutral",
+                                           PC1_pos = "Positive")
+cor_narrow_avg_percent$PC3 <- recode_factor(cor_narrow_avg_percent$PC3,
+                                           PC3_neg = "Negative",
+                                           PC3_neutral = "Neutral",
+                                           PC3_pos = "Positive")
+cor_narrow_ext_percent$PC1 <- recode_factor(cor_narrow_ext_percent$PC1,
+                                           PC1_neg = "Negative",
+                                           PC1_neutral = "Neutral",
+                                           PC1_pos = "Positive")
+cor_narrow_ext_percent$PC3 <- recode_factor(cor_narrow_ext_percent$PC3,
+                                           PC3_neg = "Negative",
+                                           PC3_neutral = "Neutral",
+                                           PC3_pos = "Positive")
+write.csv(cor_broad_avg_percent, file="../data/cor_broad_avg_percent.csv")
+write.csv(cor_broad_ext_percent, file="../data/cor_broad_ext_percent.csv")
+write.csv(cor_narrow_avg_percent, file="../data/cor_narrow_avg_percent.csv")
+write.csv(cor_narrow_ext_percent, file="../data/cor_narrow_ext_percent.csv")
+
+# Count up simulated species
+countSimSp <- function(species, size) {
+  count <- rep(0, length(south$long))
+  for (r in 1:100){
+    count <- count + sims[[species]][[size]][[replicates[r]]]$YSim
+  }
+  return(count)
+}
+
+counts <- sims
+for (s in 1:length(species)) {
+  for (n in 1:length(sizes)) {
+    count <- rep(0, length(south$long))
+    count <- countSimSp(species[s], sizes[n])
+    counts[[s]][[n]]$dat <- cbind(south, count)
+
+
+  }
+}
+
+makeSimSpPlot <- function(species, size){
+  dat2 <- data.frame(counts[[species]][[size]]$dat)
+  dat2 <- subset(dat2, dat2$SimSp != 0)
+  p1  <-
+    ggplot() +
+    geom_point(data=dat, aes(x=PC1, y=PC3, fill="SimSp"))
+  }
+
+
+p <- makeSimSpPlot("broad_avg","size2")
+
+Y <- sims$broad_avg$size2$rep1$YSim
+dat <- data.frame(cbind(south, Y))
+dat2 <- subset(dat, dat$SimSp !=0)
+p1 <- ggplot() +
+  geom_point(data=dat2, aes(x=PC1, y=PC3,
+                           color=SimSp)) +
+  scale_color_viridis()

@@ -11,6 +11,8 @@ orderOfX <- order(x1)
 x <- x1[orderOfX]
 pred2 <- real_curve_PC1[orderOfX]
 pred1 <- list()
+B1_vec <- rep(NA, length(temp$species))
+
 
 
 for (r in 1:length(replicates)){
@@ -97,6 +99,7 @@ for (r in 1:length(replicates)){
     #Calculate betas
     B0_esm <- B0_sum/sum(weight_vec)
     B1_esm <- B1_sum/sum(weight_vec)
+    B1_vec[r] <- B1_esm
 
     #Species Response Curves
     model_curve_PC1[[r]] <- pnorm(B1_esm*x1)
@@ -104,6 +107,52 @@ for (r in 1:length(replicates)){
   }}
 
 
-sim <- compareNiches(x1=pred1, x2=pred2, logit=!adjust, na.rm=T)
+#sim <- compareNiches(x1=pred1, x2=pred2, logit=!adjust, na.rm=T)
+temp$index <- as.numeric(gsub("[^[:digit:]]", "", temp$rep))
+neg <- subset(temp, temp$PC1_rankCor < 0)
+pos <- subset(temp, temp$PC1_rankCor > 0)
+zero <- subset(temp, temp$PC1_rankCor == 0)
 
 
+y1_neg <- list()
+di_neg <- list()
+for ( i in 1:length(neg$index)) {
+y1 <- order(pred1[[neg$index[i]]], decreasing=T)
+y2 <- order(pred2, decreasing=T)
+di <- y1-y2
+y1_neg[[i]] <- y1
+di_neg[[i]] <- di
+}
+
+y1_pos <- list()
+di_pos <- list()
+for ( i in 1:length(pos$index)) {
+  y1 <- order(pred1[[pos$index[i]]], decreasing=T)
+  y2 <- order(pred2, decreasing=T)
+  di <- y1-y2
+  y1_pos[[i]] <- y1
+  di_pos[[i]] <- di
+}
+
+y1_zero <- list()
+di_zero <- list()
+for ( i in 1:length(zero$index)) {
+  y1 <- order(pred1[[zero$index[i]]], decreasing=T)
+  y2 <- order(pred2, decreasing=T)
+  di <- y1-y2
+  y1_zero[[i]] <- y1
+  di_zero[[i]] <- di
+}
+
+num <- 6*sum(di^2)
+denom <- 100* (9999)
+1-6*sum(di^2)/(100*(100^2 - 1))
+
+hist(B1_vec[pos$index]) #negative values
+hist(B1_vec[neg$index]) #positive values
+
+plot(x1, real_curve_PC1, ylim=c(0,1), type='l')
+
+for (i in pos$index) {
+  points(x1, pnorm(B1_vec[2] %*% x1), col="blue", type='l')
+}
